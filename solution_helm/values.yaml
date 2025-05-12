@@ -1,0 +1,23 @@
+cert-manager:
+  enabled: true
+  installCRDs: true
+  serviceAccount:
+    annotations:
+      iam.gke.io/gcp-service-account: "cert-manager-cas-issuer-sa@${project_id}.iam.gserviceaccount.com"
+
+istio:
+  enabled: true
+  gateways:
+    istio-ingressgateway:
+      service:
+        type: LoadBalancer
+
+casIssuer:
+  projectId: ""
+  location: "us-central1"
+  caPool: ""
+  issuerName: "cas-issuer"
+
+ingress:
+  hostname: "example.com"
+  secretName: "myapp-ingress-tls"

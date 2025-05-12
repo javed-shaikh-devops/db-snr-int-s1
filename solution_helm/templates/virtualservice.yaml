@@ -1,0 +1,15 @@
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: {{ .Values.ingress.hostname }}-vs
+spec:
+  hosts:
+    - {{ .Values.ingress.hostname }}
+  gateways:
+    - {{ .Values.ingress.hostname }}-gateway
+  http:
+      - route:
+        - destination:
+            host: myapp-service.default.svc.cluster.local
+            port:
+              number: 80
