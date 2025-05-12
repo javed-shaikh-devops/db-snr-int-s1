@@ -22,3 +22,10 @@ output "cert_manager_sa_email" {
 data "google_project" "project" {
   project_id = var.project_id
 }
+
+output "ca_pool_id" {
+  value = google_privateca_ca_pool.ca_pool.id
+}
+output "service_account_email" {
+  value = google_service_account.privateca_service_account.email
+}

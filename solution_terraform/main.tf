@@ -36,12 +36,12 @@ resource "google_privateca_ca_pool" "ca_pool" {
   }
 }
 
-resource "google_privateca_ca_pool_iam_member" "privateca_admin" {
-  project = var.project_id
-  location = var.region
+resource "google_privateca_ca_pool_iam_member" "ca_admin" {
   ca_pool = "projects/${var.project_id}/locations/${var.region}/caPools/${google_privateca_ca_pool.ca_pool.name}"
-  role    = "roles/privateca.certificateAuthorityAdmin"
+  role    = "roles/privateca.admin"
   member  = "serviceAccount:${google_service_account.privateca_service_account.email}"
+
+  depends_on = [google_privateca_ca_pool.ca_pool, google_service_account.privateca_service_account]  # Explicit dependency
 }
 
 # Create KMS resources
@@ -69,7 +69,7 @@ resource "google_kms_crypto_key_iam_binding" "cas_signer" {
   crypto_key_id = google_kms_crypto_key.cas_key_4.id
   role          = "roles/cloudkms.signerVerifier"
   members = [
-    "serviceAccount:${google_service_account.privateca_service_account.email}"
+    "serviceAccount:service-${data.google_project.project.number}@gcp-sa-privateca.iam.gserviceaccount.com"
   ]
 }
 
