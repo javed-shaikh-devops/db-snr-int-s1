@@ -45,15 +45,15 @@ resource "google_privateca_ca_pool_iam_member" "ca_admin" {
 }
 
 # Create KMS resources
-resource "google_kms_key_ring" "cas_keyring_4" {
-  name     = "cas-keyring-4"
+resource "google_kms_key_ring" "cas_keyring_5" {
+  name     = "cas-keyring-5"
   location = var.region
   project  = var.project_id
 }
 
-resource "google_kms_crypto_key" "cas_key_4" {
-  name            = "cas-key-4"
-  key_ring        = google_kms_key_ring.cas_keyring_4.id
+resource "google_kms_crypto_key" "cas_key_5" {
+  name            = "cas-key-5"
+  key_ring        = google_kms_key_ring.cas_keyring_5.id
   purpose         = "ASYMMETRIC_SIGN"
   version_template {
     algorithm = "EC_SIGN_P384_SHA384"  # Recommended for CAS
@@ -66,7 +66,7 @@ resource "google_kms_crypto_key" "cas_key_4" {
 
 # Bind IAM role for the custom service account on the KMS key
 resource "google_kms_crypto_key_iam_binding" "cas_signer" {
-  crypto_key_id = google_kms_crypto_key.cas_key_4.id
+  crypto_key_id = google_kms_crypto_key.cas_key_5.id
   role          = "roles/cloudkms.signerVerifier"
   members = [
     "serviceAccount:service-${data.google_project.project.number}@gcp-sa-privateca.iam.gserviceaccount.com"
@@ -112,7 +112,7 @@ resource "google_privateca_certificate_authority" "root_ca" {
   }
 
   key_spec {
-    cloud_kms_key_version = google_kms_crypto_key.cas_key_4.id
+    cloud_kms_key_version = google_kms_crypto_key.cas_key_5.id
   }
 
   type = "SELF_SIGNED"
