@@ -26,7 +26,7 @@ resource "google_project_iam_member" "privateca_requester" {
   member  = "serviceAccount:${google_service_account.privateca_service_account.email}"
 }
 
-resource "google_project_iam_member" "privateca_admin" {
+resource "google_privateca_ca_pool_iam_member" "privateca_admin" {
   project = var.project_id
   role    = "roles/privateca.certificateAuthorityAdmin"
   member  = "serviceAccount:${google_service_account.privateca_service_account.email}"
