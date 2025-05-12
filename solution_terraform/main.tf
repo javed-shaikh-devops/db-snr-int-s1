@@ -1,41 +1,3 @@
-terraform {
-  required_version = ">= 1.0.0"
-  required_providers {
-    google = {
-      source  = "hashicorp/google"
-      version = "~> 4.0"
-    }
-    google-beta = {
-      source  = "hashicorp/google-beta"
-      version = "~> 4.0"
-    }
-  }
-}
-
-provider "google" {
-  project = var.project_id
-  region  = var.region
-}
-
-provider "google-beta" {
-  project = var.project_id
-  region  = var.region
-}
-
-# Enable required APIs
-resource "google_project_service" "apis" {
-  for_each = toset([
-    "container.googleapis.com",
-    "privateca.googleapis.com",
-    "cloudkms.googleapis.com",
-    "cloudresourcemanager.googleapis.com"
-  ])
-
-  project = var.project_id
-  service = each.value
-  disable_on_destroy = false
-}
-
 # Create a custom service account for Private CA
 resource "google_service_account" "privateca_service_account" {
   account_id   = "privateca-custom-sa"
@@ -50,16 +12,23 @@ resource "google_project_iam_member" "privateca_requester" {
   member  = "serviceAccount:${google_service_account.privateca_service_account.email}"
 }
 
+# Assign 'roles/privateca.certificateAuthorityAdmin' to the custom service account
+resource "google_project_iam_member" "privateca_admin" {
+  project = var.project_id
+  role    = "roles/privateca.certificateAuthorityAdmin"
+  member  = "serviceAccount:${google_service_account.privateca_service_account.email}"
+}
+
 # Create KMS resources
-resource "google_kms_key_ring" "cas_keyring_2" {
-  name     = "cas-keyring-2"
+resource "google_kms_key_ring" "cas_keyring_3" {
+  name     = "cas-keyring-3"
   location = var.region
   project  = var.project_id
 }
 
-resource "google_kms_crypto_key" "cas_key_2" {
-  name            = "cas-key-2"
-  key_ring        = google_kms_key_ring.cas_keyring_2.id
+resource "google_kms_crypto_key" "cas_key_3" {
+  name            = "cas-key-3"
+  key_ring        = google_kms_key_ring.cas_keyring_3.id
   purpose         = "ASYMMETRIC_SIGN"
   version_template {
     algorithm = "EC_SIGN_P384_SHA384"  # Recommended for CAS
@@ -72,7 +41,7 @@ resource "google_kms_crypto_key" "cas_key_2" {
 
 # Bind IAM role for the custom service account on the KMS key
 resource "google_kms_crypto_key_iam_binding" "cas_signer" {
-  crypto_key_id = google_kms_crypto_key.cas_key_2.id
+  crypto_key_id = google_kms_crypto_key.cas_key_3.id
   role          = "roles/cloudkms.signerVerifier"
   members = [
     "serviceAccount:${google_service_account.privateca_service_account.email}"
@@ -128,7 +97,7 @@ resource "google_privateca_certificate_authority" "root_ca" {
   }
 
   key_spec {
-    cloud_kms_key_version = google_kms_crypto_key.cas_key_2.id
+    cloud_kms_key_version = google_kms_crypto_key.cas_key_3.id
   }
 
   type = "SELF_SIGNED"
@@ -148,7 +117,7 @@ resource "google_container_cluster" "primary" {
 
   # We can't create a cluster with no node pool defined, but we want to only use
   # separately managed node pools. So we create the smallest possible default
-  # node pool
+  # node pool and immediately delete it.
   remove_default_node_pool = true
   initial_node_count       = 1
 
