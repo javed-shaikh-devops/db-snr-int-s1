@@ -26,8 +26,20 @@ resource "google_project_iam_member" "privateca_requester" {
   member  = "serviceAccount:${google_service_account.privateca_service_account.email}"
 }
 
+resource "google_privateca_ca_pool" "ca_pool" {
+  name     = "ca-pool-${random_id.suffix.hex}"
+  location = var.region
+  tier     = "ENTERPRISE"
+  publishing_options {
+    publish_ca_cert = true
+    publish_crl     = true
+  }
+}
+
 resource "google_privateca_ca_pool_iam_member" "privateca_admin" {
   project = var.project_id
+  location = var.region
+  ca_pool  = google_privateca_ca_pool.ca_pool.name
   role    = "roles/privateca.certificateAuthorityAdmin"
   member  = "serviceAccount:${google_service_account.privateca_service_account.email}"
 }
