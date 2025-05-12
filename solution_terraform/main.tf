@@ -78,16 +78,6 @@ resource "random_id" "suffix" {
   byte_length = 4
 }
 
-resource "google_privateca_ca_pool" "ca_pool" {
-  name     = "ca-pool-${random_id.suffix.hex}"
-  location = var.region
-  tier     = "ENTERPRISE"
-  publishing_options {
-    publish_ca_cert = true
-    publish_crl     = true
-  }
-}
-
 resource "google_privateca_certificate_authority" "root_ca" {
   pool                     = google_privateca_ca_pool.ca_pool.name
   certificate_authority_id = "root-ca"
