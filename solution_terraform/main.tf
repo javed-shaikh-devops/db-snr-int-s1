@@ -4,13 +4,17 @@ resource "google_project_service" "apis" {
     "container.googleapis.com",
     "privateca.googleapis.com",
     "cloudkms.googleapis.com",
-    "cloudresourcemanager.googleapis.com"
+    "cloudresourcemanager.googleapis.com",
+    "iam.googleapis.com"
   ])
 
   project = var.project_id
   service = each.value
   disable_on_destroy = false
 }
+
+# Get project number for service account
+data "google_project" "current" {}
 
 # Create custom service account for Private CA
 resource "google_service_account" "privateca_service_account" {
@@ -21,9 +25,20 @@ resource "google_service_account" "privateca_service_account" {
 
 # Assign IAM roles to the custom service account for Private CA
 resource "google_project_iam_member" "privateca_requester" {
+  for_each = toset([
+    "roles/privateca.admin",
+    "roles/privateca.caManager",
+    "roles/cloudkms.admin",
+    "roles/viewer"
+  ])
   project = var.project_id
-  role    = "roles/privateca.certificateRequester"
+  role    = each.value
   member  = "serviceAccount:${google_service_account.privateca_service_account.email}"
+}
+
+# CAS resources (Private CA Pool and Root CA)
+resource "random_id" "suffix" {
+  byte_length = 4
 }
 
 resource "google_privateca_ca_pool" "ca_pool" {
@@ -49,6 +64,7 @@ resource "google_kms_key_ring" "cas_keyring_6" {
   name     = "cas-keyring-6"
   location = var.region
   project  = var.project_id
+  depends_on = [google_project_service.apis]
 }
 
 resource "google_kms_crypto_key" "cas_key_6" {
@@ -60,7 +76,7 @@ resource "google_kms_crypto_key" "cas_key_6" {
   }
 
   lifecycle {
-    prevent_destroy = false  # Should be true in production
+    prevent_destroy = true  # Should be true in production
   }
 }
 
@@ -70,19 +86,23 @@ resource "google_kms_crypto_key_iam_binding" "cas_signer" {
   crypto_key_id = google_kms_crypto_key.cas_key_6.id
   role          = "roles/cloudkms.signerVerifier"
   members = [
+    "serviceAccount:${google_service_account.privateca_service_account.email}",
+    "serviceAccount:service-${data.google_project.current.number}@gcp-sa-privateca.iam.gserviceaccount.com"
+  ]
+}
+
+resource "google_kms_crypto_key_iam_binding" "cas_viewer" {
+  crypto_key_id = google_kms_crypto_key.cas_key_6.id
+  role          = "roles/viewer"
+  members = [
     "serviceAccount:${google_service_account.privateca_service_account.email}"
   ]
 }
 
-# CAS resources (Private CA Pool and Root CA)
-resource "random_id" "suffix" {
-  byte_length = 4
-}
 
 resource "google_privateca_certificate_authority" "root_ca" {
-  depends_on = [google_kms_crypto_key_iam_binding.cas_signer]
   pool                     = google_privateca_ca_pool.ca_pool.name
-  certificate_authority_id = "root-ca"
+  certificate_authority_id = "root-ca-${random_id.suffix.hex}"
   location                 = var.region
   deletion_protection      = false # Set to true for production
 
@@ -114,10 +134,11 @@ resource "google_privateca_certificate_authority" "root_ca" {
   }
 
   key_spec {
-    cloud_kms_key_version = google_kms_crypto_key.cas_key_6.id
+    cloud_kms_key_version = "${google_kms_crypto_key.cas_key_6.id}/cryptoKeyVersions/1"
   }
 
   type = "SELF_SIGNED"
+  depends_on = [google_kms_crypto_key_iam_binding.cas_signer, google_kms_crypto_key_iam_binding.cas_viewer]
 }
 
 # Workload Identity for cert-manager

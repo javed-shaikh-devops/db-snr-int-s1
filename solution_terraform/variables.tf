@@ -33,3 +33,13 @@ variable "organization_name" {
   type        = string
   default     = "DB Demo"
 }
+
+variable "network" {
+  type        = string
+  description = "VPC network for the cluster"
+}
+
+variable "subnetwork" {
+  type        = string
+  description = "Subnetwork for the cluster"
+}
