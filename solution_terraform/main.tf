@@ -155,7 +155,7 @@ resource "google_privateca_certificate_authority" "root_ca" {
 
 # Workload Identity Binding for cert-manager
 resource "google_service_account_iam_member" "cert_manager_workload_identity" {
-  service_account_id = google_service_account.cert-manager-cas-issuer-sa.email
+  service_account_id = "projects/${var.project_id}/serviceAccounts/${google_service_account.cert-manager-cas-issuer-sa.email}"
   role               = "roles/iam.workloadIdentityUser"
   member             = "serviceAccount:${var.project_id}.svc.id.goog[cert-manager/cert-manager]"
 }
