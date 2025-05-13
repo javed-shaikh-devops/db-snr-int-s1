@@ -64,12 +64,13 @@ resource "google_kms_crypto_key" "cas_key_5" {
   }
 }
 
+
 # Bind IAM role for the custom service account on the KMS key
 resource "google_kms_crypto_key_iam_binding" "cas_signer" {
   crypto_key_id = google_kms_crypto_key.cas_key_5.id
   role          = "roles/cloudkms.signerVerifier"
   members = [
-    "serviceAccount:service-${data.google_project.project.number}@gcp-sa-privateca.iam.gserviceaccount.com"
+    "serviceAccount:${google_service_account.privateca_service_account.email}"
   ]
 }
 
@@ -79,6 +80,7 @@ resource "random_id" "suffix" {
 }
 
 resource "google_privateca_certificate_authority" "root_ca" {
+  depends_on = [google_kms_crypto_key_iam_binding.cas_signer]
   pool                     = google_privateca_ca_pool.ca_pool.name
   certificate_authority_id = "root-ca"
   location                 = var.region
