@@ -27,9 +27,9 @@ resource "google_service_account" "privateca_service_account" {
 resource "google_project_iam_member" "privateca_requester" {
   for_each = toset([
     "roles/privateca.admin",
-    "roles/privateca.caManager",
+    "roles/privateca.certificateRequester",
     "roles/cloudkms.admin",
-    "roles/serviceAccountAdmin",
+    "roles/iam.serviceAccountUser"
     "roles/viewer"
   ])
   project = var.project_id
@@ -61,16 +61,16 @@ resource "google_privateca_ca_pool_iam_member" "ca_admin" {
 }
 
 # Create KMS resources
-resource "google_kms_key_ring" "cas_keyring_8" {
+resource "google_kms_key_ring" "cas_keyring" {
   name     = "cas-keyring-8"
   location = var.region
   project  = var.project_id
   depends_on = [google_project_service.apis]
 }
 
-resource "google_kms_crypto_key" "cas_key_8" {
+resource "google_kms_crypto_key" "cas_key" {
   name            = "cas-key-8"
-  key_ring        = google_kms_key_ring.cas_keyring_8.id
+  key_ring        = google_kms_key_ring.cas_keyring.id
   purpose         = "ASYMMETRIC_SIGN"
   version_template {
     algorithm = "EC_SIGN_P384_SHA384"  # Recommended for CAS
@@ -83,16 +83,21 @@ resource "google_kms_crypto_key" "cas_key_8" {
 
 
 # Bind IAM role for the custom service account on the KMS key
-resource "google_kms_crypto_key_iam_member" "cas_signer" {
-  crypto_key_id = google_kms_crypto_key.cas_key_8.id
+resource "google_kms_crypto_key_iam_binding" "cas_signer" {
+  crypto_key_id = google_kms_crypto_key.cas_key.id
   role          = "roles/cloudkms.signerVerifier"
-  member = "serviceAccount:${google_service_account.privateca_service_account.email}"
+  members = [
+    "serviceAccount:${google_service_account.privateca_service_account.email}",
+    "serviceAccount:service-${data.google_project.current.number}@gcp-sa-privateca.iam.gserviceaccount.com"
+  ]
 }
 
-resource "google_kms_crypto_key_iam_member" "cas_viewer" {
-  crypto_key_id = google_kms_crypto_key.cas_key_8.id
+resource "google_kms_crypto_key_iam_binding" "cas_viewer" {
+  crypto_key_id = google_kms_crypto_key.cas_key.id
   role          = "roles/viewer"
-  member = "serviceAccount:${google_service_account.privateca_service_account.email}"
+  members = [
+    "serviceAccount:${google_service_account.privateca_service_account.email}"
+  ]
 }
 
 
@@ -130,12 +135,17 @@ resource "google_privateca_certificate_authority" "root_ca" {
   }
 
   key_spec {
-    cloud_kms_key_version = "${google_kms_crypto_key.cas_key_8.id}/cryptoKeyVersions/1"
+    cloud_kms_key_version = "${google_kms_crypto_key.cas_key.id}/cryptoKeyVersions/1"
   }
 
   type = "SELF_SIGNED"
   desired_state = "ENABLED"
-  depends_on = [google_kms_crypto_key_iam_member.cas_signer, google_kms_crypto_key_iam_member.cas_viewer]
+  depends_on = [
+    google_kms_crypto_key_iam_binding.cas_signer,
+    google_kms_crypto_key_iam_binding.cas_viewer,
+    google_project_iam_member.privateca_requester,
+    google_privateca_ca_pool_iam_member.ca_admin
+  ]
 }
 
 # Workload Identity for cert-manager
