@@ -77,7 +77,7 @@ resource "google_kms_key_ring" "cas_keyring" {
 }
 
 resource "google_kms_crypto_key" "cas_key" {
-  name            = "cas-key-8"
+  name            = "cas-key"
   key_ring        = google_kms_key_ring.cas_keyring.id
   purpose         = "ASYMMETRIC_SIGN"
   version_template {
