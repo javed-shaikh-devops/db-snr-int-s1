@@ -81,7 +81,7 @@ resource "google_kms_crypto_key" "cas_key" {
 
 resource "null_resource" "create_cas_identity" {
   provisioner "local-exec" {
-    command = "gcloud services identity create --service=privateca.googleapis.com --project=${var.project_id}"
+    command = "gcloud beta services identity create --service=privateca.googleapis.com --project=${var.project_id}"
   }
   depends_on = [google_project_service.apis]
 }
