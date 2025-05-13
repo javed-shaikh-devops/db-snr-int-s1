@@ -135,7 +135,7 @@ resource "google_privateca_certificate_authority" "root_ca" {
 
   type = "SELF_SIGNED"
   desired_state = "ENABLED"
-  depends_on = [google_kms_crypto_key_iam_binding.cas_signer, google_kms_crypto_key_iam_binding.cas_viewer]
+  depends_on = [google_kms_crypto_key_iam_member.cas_signer, google_kms_crypto_key_iam_member.cas_viewer]
 }
 
 # Workload Identity for cert-manager
