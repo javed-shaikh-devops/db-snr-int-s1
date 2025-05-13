@@ -50,6 +50,14 @@ resource "google_privateca_ca_pool" "ca_pool" {
     publish_ca_cert = true
     publish_crl     = true
   }
+  depends_on = [google_project_service.apis]
+}
+
+resource "null_resource" "wait_for_cas_sa" {
+  provisioner "local-exec" {
+    command = "sleep 60"
+  }
+  depends_on = [google_privateca_ca_pool.ca_pool]
 }
 
 resource "google_privateca_ca_pool_iam_member" "ca_admin" {
@@ -144,7 +152,8 @@ resource "google_privateca_certificate_authority" "root_ca" {
     google_kms_crypto_key_iam_binding.cas_signer,
     google_kms_crypto_key_iam_binding.cas_viewer,
     google_project_iam_member.privateca_requester,
-    google_privateca_ca_pool_iam_member.ca_admin
+    google_privateca_ca_pool_iam_member.ca_admin,
+    null_resource.wait_for_cas_sa
   ]
 }
 
