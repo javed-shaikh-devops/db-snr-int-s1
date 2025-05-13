@@ -86,6 +86,19 @@ resource "null_resource" "create_cas_identity" {
   depends_on = [google_project_service.apis]
 }
 
+# Get the current project number (required to construct the CAS SA email)
+data "google_project" "current" {
+  project_id = var.project_id
+}
+
+# Grant the CAS service account permission to view the public key in KMS
+resource "google_kms_crypto_key_iam_member" "cas_key_public_view" {
+  crypto_key_id = google_kms_crypto_key.cas_key.id
+  role          = "roles/cloudkms.viewer"
+  member        = "serviceAccount:service-${data.google_project.current.number}@gcp-sa-privateca.iam.gserviceaccount.com"
+
+  depends_on = [null_resource.create_cas_identity]
+}
 
 # IAM Bindings for KMS key
 resource "google_kms_crypto_key_iam_binding" "cas_signer" {
