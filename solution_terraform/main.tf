@@ -29,7 +29,7 @@ resource "google_project_iam_member" "privateca_requester" {
     "roles/privateca.admin",
     "roles/privateca.certificateRequester",
     "roles/cloudkms.admin",
-    "roles/iam.serviceAccountUser"
+    "roles/iam.serviceAccountUser",
     "roles/viewer"
   ])
   project = var.project_id
