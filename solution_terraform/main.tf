@@ -86,19 +86,13 @@ resource "google_kms_crypto_key" "cas_key_8" {
 resource "google_kms_crypto_key_iam_member" "cas_signer" {
   crypto_key_id = google_kms_crypto_key.cas_key_8.id
   role          = "roles/cloudkms.signerVerifier"
-  member = [
-    "serviceAccount:${google_service_account.privateca_service_account.email}",
-    "serviceAccount:service-${data.google_project.current.number}@gcp-sa-privateca.iam.gserviceaccount.com"
-  ]
-
+  member = "serviceAccount:${google_service_account.privateca_service_account.email}"
 }
 
 resource "google_kms_crypto_key_iam_member" "cas_viewer" {
   crypto_key_id = google_kms_crypto_key.cas_key_8.id
   role          = "roles/viewer"
-  member = [
-    "serviceAccount:${google_service_account.privateca_service_account.email}"
-  ]
+  member = "serviceAccount:${google_service_account.privateca_service_account.email}"
 }
 
 
