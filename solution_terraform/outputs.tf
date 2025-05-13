@@ -1,4 +1,3 @@
-# Output variables
 output "ca_pool_name" {
   description = "The name of the CA Pool"
   value       = google_privateca_ca_pool.ca_pool.name
@@ -16,16 +15,5 @@ output "cluster_endpoint" {
 
 output "cert_manager_sa_email" {
   description = "The email of the cert-manager service account"
-  value       = google_service_account.privateca_service_account.email
-}
-
-data "google_project" "project" {
-  project_id = var.project_id
-}
-
-output "ca_pool_id" {
-  value = google_privateca_ca_pool.ca_pool.id
-}
-output "service_account_email" {
-  value = google_service_account.privateca_service_account.email
+  value       = google_service_account.cert-manager-cas-issuer-sa.email
 }
