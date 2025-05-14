@@ -114,7 +114,7 @@ resource "google_kms_crypto_key_iam_binding" "kms_viewer_binding" {
 # IAM Bindings for KMS Signer
 resource "google_kms_crypto_key_iam_binding" "kms_signer_binding" {
   crypto_key_id = google_kms_crypto_key.cas_key.id
-  role          = "roles/cloudkms.signerVerifier"
+  role          = ["roles/cloudkms.signerVerifier, roles/cloudkms.publicKeyViewer "]
   members = [
     "serviceAccount:${google_service_account.cert-manager-cas-issuer-sa.email}",
     "serviceAccount:service-${data.google_project.current.number}@gcp-sa-privateca.iam.gserviceaccount.com",
