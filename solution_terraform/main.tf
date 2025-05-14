@@ -129,7 +129,7 @@ resource "google_kms_crypto_key_iam_member" "kms_key_public_viewer" {
   member        = "serviceAccount:service-${data.google_project.current.number}@gcp-sa-privateca.iam.gserviceaccount.com"
 }
 
-resource "google_kms_crypto_key_iam_member" "kms_key_public_viewer" {
+resource "google_kms_crypto_key_iam_member" "kms_key_public_viewer_custom_sa" {
   crypto_key_id = google_kms_crypto_key.cas_key.id
   role          = "roles/cloudkms.publicKeyViewer"
   member        = "serviceAccount:${google_service_account.cert-manager-cas-issuer-sa.email}"
