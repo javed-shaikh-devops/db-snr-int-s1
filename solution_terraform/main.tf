@@ -160,11 +160,7 @@ resource "google_privateca_certificate_authority" "root_ca" {
   desired_state = "ENABLED"
 
   depends_on = [
-    null_resource.create_cas_identity,
-    google_kms_crypto_key_iam_binding.kms_viewer_binding,
-    google_kms_crypto_key_iam_binding.kms_signer_binding,
-    google_project_iam_member.privateca_requester
-
+    null_resource.create_cas_identity
   ]
   timeouts {
     create = "30m"
