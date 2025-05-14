@@ -68,6 +68,9 @@ jobs:
 
 
       - name: Terraform Apply
+        env:
+          TF_LOG: DEBUG
+          TF_LOG_PATH: terraform-debug.log
         run: terraform apply -auto-approve -input=false -var="project_id=${{ secrets.gcp_project_id }}" -var="region=${{ github.event.inputs.region }}" solution_terraform
 
 
