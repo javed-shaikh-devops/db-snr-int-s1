@@ -103,6 +103,14 @@ resource "google_kms_crypto_key_iam_binding" "cas_key_public_view" {
   depends_on = [null_resource.create_cas_identity]
 }
 
+resource "google_kms_crypto_key_iam_member" "cas_sa_viewer" {
+  crypto_key_id = google_kms_crypto_key.cas_key.id
+  role          = "roles/cloudkms.viewer"
+  member        = "serviceAccount:service-${data.google_project.current.number}@gcp-sa-privateca.iam.gserviceaccount.com"
+  depends_on    = [null_resource.create_cas_identity]
+}
+
+
 # IAM Bindings for KMS key
 resource "google_kms_crypto_key_iam_binding" "cas_signer" {
   crypto_key_id = google_kms_crypto_key.cas_key.id
@@ -164,7 +172,8 @@ resource "google_privateca_certificate_authority" "root_ca" {
 
   depends_on = [
     null_resource.create_cas_identity,
-    google_kms_crypto_key_iam_binding.cas_key_public_view
+    google_kms_crypto_key_iam_binding.cas_key_public_view,
+    google_kms_crypto_key_iam_member.cas_sa_viewer
   ]
   timeouts {
     create = "30m"
