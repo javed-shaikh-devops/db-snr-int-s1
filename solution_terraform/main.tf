@@ -34,7 +34,7 @@ resource "google_service_account" "cert-manager-cas-issuer-sa" {
 }
 
 # Assign IAM roles to the custom service account
-resource "google_project_iam_member" "custom_ca_access_requester" {
+resource "google_project_iam_member" "privateca_requester" {
   for_each = toset([
     "roles/privateca.admin",
     "roles/privateca.certificateRequester",
@@ -203,12 +203,6 @@ resource "google_container_cluster" "primary" {
     workload_pool = "${var.project_id}.svc.id.goog"
   }
 
-  # Enable KMS-based CMEK encryption for Kubernetes secrets
-  database_encryption {
-    state    = "ENCRYPTED"
-    key_name = google_kms_crypto_key.cas_key.id
-  }
-
   depends_on = [google_project_service.apis]
 
   timeouts {
@@ -238,14 +232,6 @@ resource "google_container_node_pool" "primary_nodes" {
     auto_upgrade = true
   }
 }
-
-# The GKE service account must have access to use the KMS key
-resource "google_kms_crypto_key_iam_member" "gke_kms_user" {
-  crypto_key_id = google_kms_crypto_key.cas_key.id
-  role          = "roles/cloudkms.cryptoKeyEncrypterDecrypter"
-  member        = "serviceAccount:service-${data.google_project.current.number}@container-engine-robot.iam.gserviceaccount.com"
-}
-
 
 # Workload Identity Binding for cert-manager
 resource "google_service_account_iam_member" "cert_manager_workload_identity" {
