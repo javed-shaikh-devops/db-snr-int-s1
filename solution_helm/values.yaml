@@ -14,7 +14,7 @@ istio:
 
 casIssuer:
   projectId: ""
-  location: "us-central1"
+  location: "europe-west1"
   caPool: ""
   issuerName: "cas-issuer"
 
