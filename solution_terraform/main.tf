@@ -173,6 +173,9 @@ resource "google_privateca_certificate_authority" "root_ca" {
   depends_on = [
     null_resource.create_cas_identity,
     google_kms_crypto_key_iam_binding.cas_key_public_view,
+    google_kms_crypto_key_iam_binding.cas_signer,
+    google_kms_crypto_key_iam_binding.cas_viewer,
+    google_project_iam_member.privateca_requester,
     google_kms_crypto_key_iam_member.cas_sa_viewer
   ]
   timeouts {

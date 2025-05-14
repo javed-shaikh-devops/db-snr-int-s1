@@ -7,7 +7,7 @@ variable "project_id" {
 variable "region" {
   description = "The GCP region"
   type        = string
-  default     = "europe-west2"
+  default     = "europe-west1"
 }
 
 variable "cluster_name" {
@@ -25,7 +25,7 @@ variable "node_count" {
 variable "machine_type" {
   description = "Machine type for GKE nodes"
   type        = string
-  default     = "e2-micro"
+  default     = "e2-small"
 }
 
 variable "organization_name" {

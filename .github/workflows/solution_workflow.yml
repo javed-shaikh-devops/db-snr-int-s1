@@ -7,7 +7,7 @@ on:
         required: true
       region:
         description: 'GCP Region'
-        default: 'europe-west2'
+        default: 'europe-west1'
       hostname:
         description: 'Hostname for the ingress'
         required: true
