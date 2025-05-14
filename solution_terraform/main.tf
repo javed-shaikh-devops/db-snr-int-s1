@@ -126,7 +126,7 @@ resource "google_kms_crypto_key_iam_binding" "kms_signer_binding" {
 resource "google_kms_crypto_key_iam_member" "kms_key_public_viewer" {
   crypto_key_id = google_kms_crypto_key.cas_key.id
   role          = "roles/cloudkms.publicKeyViewer"
-  member        = "service-${data.google_project.current.number}@gcp-sa-privateca.iam.gserviceaccount.com"
+  member        = "serviceAccount:service-${data.google_project.current.number}@gcp-sa-privateca.iam.gserviceaccount.com"
 }
 
 # Self-signed Root CA
