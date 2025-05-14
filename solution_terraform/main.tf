@@ -123,17 +123,23 @@ resource "google_kms_crypto_key_iam_binding" "kms_signer_binding" {
   depends_on = [null_resource.create_cas_identity, google_kms_crypto_key.cas_key]
 }
 
-resource "google_kms_crypto_key_iam_member" "kms_key_public_viewer" {
+resource "google_kms_crypto_key_iam_binding" "kms_key_public_viewer_combined" {
   crypto_key_id = google_kms_crypto_key.cas_key.id
   role          = "roles/cloudkms.publicKeyViewer"
-  member        = "serviceAccount:service-${data.google_project.current.number}@gcp-sa-privateca.iam.gserviceaccount.com"
+
+  members = [
+    "serviceAccount:service-${data.google_project.current.number}@gcp-sa-privateca.iam.gserviceaccount.com",
+    "serviceAccount:${google_service_account.cert-manager-cas-issuer-sa.email}",
+    "serviceAccount:terraform-sa@db-demo-int.iam.gserviceaccount.com"
+  ]
 }
 
-resource "google_kms_crypto_key_iam_member" "kms_key_public_viewer_custom_sa" {
-  crypto_key_id = google_kms_crypto_key.cas_key.id
-  role          = "roles/cloudkms.publicKeyViewer"
-  member        = "serviceAccount:${google_service_account.cert-manager-cas-issuer-sa.email}"
+resource "google_project_iam_member" "privateca_admin_terraform_sa" {
+  project = var.project_id
+  role    = "roles/privateca.admin"
+  member  = "serviceAccount:terraform-sa@db-demo-int.iam.gserviceaccount.com"
 }
+
 
 # Self-signed Root CA
 resource "google_privateca_certificate_authority" "root_ca" {
@@ -177,7 +183,7 @@ resource "google_privateca_certificate_authority" "root_ca" {
   desired_state = "ENABLED"
 
   depends_on = [
-    google_kms_crypto_key_iam_member.kms_key_public_viewer
+    google_kms_crypto_key_iam_binding.kms_key_public_viewer_combined
   ]
   timeouts {
     create = "30m"
