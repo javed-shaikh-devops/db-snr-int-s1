@@ -13,6 +13,14 @@ resource "google_project_service" "apis" {
   disable_on_destroy = false
 }
 
+# Force creation of CAS identity
+resource "null_resource" "create_cas_identity" {
+  provisioner "local-exec" {
+    command = "gcloud beta services identity create --service=privateca.googleapis.com --project=${var.project_id}"
+  }
+  depends_on = [google_project_service.apis]
+}
+
 # Create custom service account for Private CA
 resource "google_service_account" "cert-manager-cas-issuer-sa" {
   account_id   = "cert-manager-cas-issuer-sa"
@@ -91,57 +99,29 @@ data "google_project" "current" {
   project_id = var.project_id
 }
 
-# Grant the CAS service account permission to view the public key in KMS
-resource "google_kms_crypto_key_iam_binding" "cas_key_public_view" {
+# # IAM Bindings for KMS Viewer
+resource "google_kms_crypto_key_iam_binding" "kms_viewer_binding" {
   crypto_key_id = google_kms_crypto_key.cas_key.id
   role          = "roles/cloudkms.viewer"
   members = [
     "serviceAccount:${google_service_account.cert-manager-cas-issuer-sa.email}",
-    "serviceAccount:service-${data.google_project.current.number}@gcp-sa-privateca.iam.gserviceaccount.com"
+    "serviceAccount:service-${data.google_project.current.number}@gcp-sa-privateca.iam.gserviceaccount.com",
+    "serviceAccount:terraform-sa@db-demo-int.iam.gserviceaccount.com"
   ]
-
-  depends_on = [null_resource.create_cas_identity]
+  depends_on = [null_resource.create_cas_identity, google_kms_crypto_key.cas_key]
 }
 
-# Grant the Terrafrom service account permission to view the public key in KMS
-resource "google_kms_crypto_key_iam_member" "terraform_sa_kms_public_key_viewer" {
-  crypto_key_id = google_kms_crypto_key.cas_key.id
-  role          = "roles/cloudkms.publicKeyViewer"
-  member        = "serviceAccount:terraform-sa@db-demo-int.iam.gserviceaccount.com"
-}
-
-resource "google_kms_crypto_key_iam_member" "terraform_sa_kms_signer" {
-  crypto_key_id = google_kms_crypto_key.cas_key.id
-  role          = "roles/cloudkms.signerVerifier"
-  member        = "serviceAccount:terraform-sa@db-demo-int.iam.gserviceaccount.com"
-}
-
-
-resource "google_kms_crypto_key_iam_member" "cas_sa_viewer" {
-  crypto_key_id = google_kms_crypto_key.cas_key.id
-  role          = "roles/cloudkms.viewer"
-  member        = "serviceAccount:service-${data.google_project.current.number}@gcp-sa-privateca.iam.gserviceaccount.com"
-  depends_on    = [null_resource.create_cas_identity, google_kms_crypto_key.cas_key]
-}
-
-
-# IAM Bindings for KMS key
-resource "google_kms_crypto_key_iam_binding" "cas_signer" {
+# IAM Bindings for KMS Signer
+resource "google_kms_crypto_key_iam_binding" "kms_signer_binding" {
   crypto_key_id = google_kms_crypto_key.cas_key.id
   role          = "roles/cloudkms.signerVerifier"
   members = [
     "serviceAccount:${google_service_account.cert-manager-cas-issuer-sa.email}",
-
+    "serviceAccount:terraform-sa@db-demo-int.iam.gserviceaccount.com"
   ]
+  depends_on = [null_resource.create_cas_identity, google_kms_crypto_key.cas_key]
 }
 
-resource "google_kms_crypto_key_iam_binding" "cas_viewer" {
-  crypto_key_id = google_kms_crypto_key.cas_key.id
-  role          = "roles/cloudkms.viewer"
-  members = [
-    "serviceAccount:${google_service_account.cert-manager-cas-issuer-sa.email}"
-  ]
-}
 
 # Self-signed Root CA
 resource "google_privateca_certificate_authority" "root_ca" {
@@ -186,26 +166,15 @@ resource "google_privateca_certificate_authority" "root_ca" {
 
   depends_on = [
     null_resource.create_cas_identity,
-    google_kms_crypto_key_iam_binding.cas_key_public_view,
-    google_kms_crypto_key_iam_binding.cas_signer,
-    google_kms_crypto_key_iam_binding.cas_viewer,
-    google_project_iam_member.privateca_requester,
-    google_kms_crypto_key_iam_member.cas_sa_viewer,
-    google_kms_crypto_key_iam_member.terraform_sa_kms_public_key_viewer,
-    google_kms_crypto_key_iam_member.terraform_sa_kms_signer
+    google_kms_crypto_key_iam_binding.kms_viewer_binding,
+    google_kms_crypto_key_iam_binding.kms_signer_binding,
+    google_project_iam_member.privateca_requester
 
   ]
   timeouts {
     create = "30m"
     delete = "30m"
   }
-}
-
-# Workload Identity Binding for cert-manager
-resource "google_service_account_iam_member" "cert_manager_workload_identity" {
-  service_account_id = "projects/${var.project_id}/serviceAccounts/${google_service_account.cert-manager-cas-issuer-sa.email}"
-  role               = "roles/iam.workloadIdentityUser"
-  member             = "serviceAccount:${var.project_id}.svc.id.goog[cert-manager/cert-manager]"
 }
 
 # GKE Cluster
@@ -247,4 +216,11 @@ resource "google_container_node_pool" "primary_nodes" {
     auto_repair  = true
     auto_upgrade = true
   }
+}
+
+# Workload Identity Binding for cert-manager
+resource "google_service_account_iam_member" "cert_manager_workload_identity" {
+  service_account_id = "projects/${var.project_id}/serviceAccounts/${google_service_account.cert-manager-cas-issuer-sa.email}"
+  role               = "roles/iam.workloadIdentityUser"
+  member             = "serviceAccount:${var.project_id}.svc.id.goog[cert-manager/cert-manager]"
 }
