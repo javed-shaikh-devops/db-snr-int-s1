@@ -149,6 +149,11 @@ resource "google_privateca_certificate_authority" "root_ca" {
         }
       }
     }
+    timeouts {
+      create = "30m"
+      delete = "30m"
+    }
+
   }
 
   key_spec {
@@ -156,7 +161,7 @@ resource "google_privateca_certificate_authority" "root_ca" {
   }
 
   type          = "SELF_SIGNED"
-  desired_state = "ENABLED"
+  desired_state = "STAGED"
 
   depends_on = [
     google_kms_crypto_key_iam_binding.cas_signer,
@@ -186,6 +191,11 @@ resource "google_container_cluster" "primary" {
   }
 
   depends_on = [google_project_service.apis]
+  timeouts {
+    create = "30m"
+    delete = "20m"
+    update = "20m"
+  }
 }
 
 # Node Pool
