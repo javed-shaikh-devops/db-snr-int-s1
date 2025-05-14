@@ -18,6 +18,11 @@ resource "null_resource" "create_cas_identity" {
   provisioner "local-exec" {
     command = "gcloud beta services identity create --service=privateca.googleapis.com --project=${var.project_id}"
   }
+
+  triggers = {
+    always_run = timestamp()
+  }
+
   depends_on = [google_project_service.apis]
 }
 
@@ -112,6 +117,7 @@ resource "google_kms_crypto_key_iam_binding" "kms_signer_binding" {
   role          = "roles/cloudkms.signerVerifier"
   members = [
     "serviceAccount:${google_service_account.cert-manager-cas-issuer-sa.email}",
+    "serviceAccount:service-${data.google_project.current.number}@gcp-sa-privateca.iam.gserviceaccount.com",
     "serviceAccount:terraform-sa@db-demo-int.iam.gserviceaccount.com"
   ]
   depends_on = [null_resource.create_cas_identity, google_kms_crypto_key.cas_key]
@@ -121,7 +127,7 @@ resource "google_kms_crypto_key_iam_binding" "kms_signer_binding" {
 # Self-signed Root CA
 resource "google_privateca_certificate_authority" "root_ca" {
   pool                     = google_privateca_ca_pool.ca_pool.name
-  certificate_authority_id = "root-ca-${random_id.suffix.hex}"
+  certificate_authority_id = "root-ca"
   location                 = var.region
   deletion_protection      = false
 
@@ -160,7 +166,7 @@ resource "google_privateca_certificate_authority" "root_ca" {
   desired_state = "ENABLED"
 
   depends_on = [
-    null_resource.create_cas_identity
+    google_privateca_ca_pool.ca_pool
   ]
   timeouts {
     create = "30m"
