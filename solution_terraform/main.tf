@@ -160,12 +160,8 @@ resource "google_privateca_certificate_authority" "root_ca" {
   desired_state = "STAGED"
 
   depends_on = [
-    google_kms_crypto_key_iam_binding.cas_signer,
-    google_kms_crypto_key_iam_binding.cas_viewer,
-    google_kms_crypto_key_iam_member.cas_key_public_view,
-    google_project_iam_member.privateca_requester,
-    google_privateca_ca_pool_iam_member.ca_admin,
-    null_resource.create_cas_identity
+    null_resource.create_cas_identity,
+    google_kms_crypto_key_iam_member.cas_key_public_view
   ]
   timeouts {
     create = "30m"
