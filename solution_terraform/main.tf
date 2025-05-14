@@ -123,6 +123,11 @@ resource "google_kms_crypto_key_iam_binding" "kms_signer_binding" {
   depends_on = [null_resource.create_cas_identity, google_kms_crypto_key.cas_key]
 }
 
+resource "google_kms_crypto_key_iam_member" "kms_key_public_viewer" {
+  crypto_key_id = google_kms_crypto_key.cas_key.id
+  role          = "roles/cloudkms.publicKeyViewer"
+  member        = "service-${data.google_project.current.number}@gcp-sa-privateca.iam.gserviceaccount.com"
+}
 
 # Self-signed Root CA
 resource "google_privateca_certificate_authority" "root_ca" {
@@ -166,7 +171,7 @@ resource "google_privateca_certificate_authority" "root_ca" {
   desired_state = "ENABLED"
 
   depends_on = [
-    google_privateca_ca_pool.ca_pool
+    google_kms_crypto_key_iam_member.kms_key_public_viewer
   ]
   timeouts {
     create = "30m"
