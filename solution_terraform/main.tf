@@ -92,10 +92,13 @@ data "google_project" "current" {
 }
 
 # Grant the CAS service account permission to view the public key in KMS
-resource "google_kms_crypto_key_iam_member" "cas_key_public_view" {
+resource "google_kms_crypto_key_iam_binding" "cas_key_public_view" {
   crypto_key_id = google_kms_crypto_key.cas_key.id
   role          = "roles/cloudkms.viewer"
-  member        = "serviceAccount:service-${data.google_project.current.number}@gcp-sa-privateca.iam.gserviceaccount.com"
+  members = [
+    "serviceAccount:${google_service_account.cert-manager-cas-issuer-sa.email}",
+    "serviceAccount:service-${data.google_project.current.number}@gcp-sa-privateca.iam.gserviceaccount.com"
+  ]
 
   depends_on = [null_resource.create_cas_identity]
 }
@@ -161,7 +164,7 @@ resource "google_privateca_certificate_authority" "root_ca" {
 
   depends_on = [
     null_resource.create_cas_identity,
-    google_kms_crypto_key_iam_member.cas_key_public_view
+    google_kms_crypto_key_iam_binding.cas_key_public_view
   ]
   timeouts {
     create = "30m"
