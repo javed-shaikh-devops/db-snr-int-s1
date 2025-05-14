@@ -149,10 +149,6 @@ resource "google_privateca_certificate_authority" "root_ca" {
         }
       }
     }
-    timeouts {
-      create = "30m"
-      delete = "30m"
-    }
 
   }
 
@@ -169,6 +165,10 @@ resource "google_privateca_certificate_authority" "root_ca" {
     google_project_iam_member.privateca_requester,
     google_privateca_ca_pool_iam_member.ca_admin
   ]
+  timeouts {
+    create = "30m"
+    delete = "30m"
+  }
 }
 
 # Workload Identity Binding for cert-manager
