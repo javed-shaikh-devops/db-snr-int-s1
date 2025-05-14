@@ -103,6 +103,20 @@ resource "google_kms_crypto_key_iam_binding" "cas_key_public_view" {
   depends_on = [null_resource.create_cas_identity]
 }
 
+# Grant the Terrafrom service account permission to view the public key in KMS
+resource "google_kms_crypto_key_iam_member" "terraform_sa_kms_public_key_viewer" {
+  crypto_key_id = google_kms_crypto_key.cas_key.id
+  role          = "roles/cloudkms.publicKeyViewer"
+  member        = "serviceAccount:terraform-sa@db-demo-int.iam.gserviceaccount.com"
+}
+
+resource "google_kms_crypto_key_iam_member" "terraform_sa_kms_signer" {
+  crypto_key_id = google_kms_crypto_key.cas_key.id
+  role          = "roles/cloudkms.signerVerifier"
+  member        = "serviceAccount:terraform-sa@db-demo-int.iam.gserviceaccount.com"
+}
+
+
 resource "google_kms_crypto_key_iam_member" "cas_sa_viewer" {
   crypto_key_id = google_kms_crypto_key.cas_key.id
   role          = "roles/cloudkms.viewer"
@@ -168,7 +182,7 @@ resource "google_privateca_certificate_authority" "root_ca" {
   }
 
   type          = "SELF_SIGNED"
-  desired_state = "STAGED"
+  desired_state = "ENABLED"
 
   depends_on = [
     null_resource.create_cas_identity,
@@ -176,7 +190,10 @@ resource "google_privateca_certificate_authority" "root_ca" {
     google_kms_crypto_key_iam_binding.cas_signer,
     google_kms_crypto_key_iam_binding.cas_viewer,
     google_project_iam_member.privateca_requester,
-    google_kms_crypto_key_iam_member.cas_sa_viewer
+    google_kms_crypto_key_iam_member.cas_sa_viewer,
+    google_kms_crypto_key_iam_member.terraform_sa_kms_public_key_viewer,
+    google_kms_crypto_key_iam_member.terraform_sa_kms_signer
+
   ]
   timeouts {
     create = "30m"
