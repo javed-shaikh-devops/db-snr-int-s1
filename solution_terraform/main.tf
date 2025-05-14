@@ -107,7 +107,7 @@ resource "google_kms_crypto_key_iam_member" "cas_sa_viewer" {
   crypto_key_id = google_kms_crypto_key.cas_key.id
   role          = "roles/cloudkms.viewer"
   member        = "serviceAccount:service-${data.google_project.current.number}@gcp-sa-privateca.iam.gserviceaccount.com"
-  depends_on    = [null_resource.create_cas_identity]
+  depends_on    = [null_resource.create_cas_identity, google_kms_crypto_key.cas_key]
 }
 
 
