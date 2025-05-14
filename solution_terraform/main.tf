@@ -112,7 +112,7 @@ resource "google_kms_crypto_key_iam_binding" "cas_signer" {
 
 resource "google_kms_crypto_key_iam_binding" "cas_viewer" {
   crypto_key_id = google_kms_crypto_key.cas_key.id
-  role          = "roles/viewer"
+  role          = "roles/cloudkms.viewer"
   members = [
     "serviceAccount:${google_service_account.cert-manager-cas-issuer-sa.email}"
   ]
@@ -162,8 +162,10 @@ resource "google_privateca_certificate_authority" "root_ca" {
   depends_on = [
     google_kms_crypto_key_iam_binding.cas_signer,
     google_kms_crypto_key_iam_binding.cas_viewer,
+    google_kms_crypto_key_iam_member.cas_key_public_view,
     google_project_iam_member.privateca_requester,
-    google_privateca_ca_pool_iam_member.ca_admin
+    google_privateca_ca_pool_iam_member.ca_admin,
+    null_resource.create_cas_identity
   ]
   timeouts {
     create = "30m"
@@ -192,7 +194,7 @@ resource "google_container_cluster" "primary" {
 
   depends_on = [google_project_service.apis]
   timeouts {
-    create = "30m"
+    create = "40m"
     delete = "20m"
     update = "20m"
   }
