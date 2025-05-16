@@ -113,7 +113,8 @@
           run: |
             kubectl create clusterrolebinding cert-manager-cas-issuer-admin-binding \
               --clusterrole=cluster-admin \
-              --serviceaccount=cert-manager:cert-manager-cas-issuer-sa || true
+              --user=cert-manager-cas-issuer-sa@${{ github.event.inputs.project_id }}.iam.gserviceaccount.com || true
+#              --serviceaccount=cert-manager:cert-manager-cas-issuer-sa || true
 
         - name: Configure Helm Repo's
           run: |
