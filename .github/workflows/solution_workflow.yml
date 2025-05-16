@@ -27,7 +27,7 @@
       defaults:
         run:
           shell: bash
-          working-directory: ./solution_terraform  # Your terraform folder
+
 
       steps:
         - name: Checkout
@@ -58,16 +58,19 @@
           uses: hashicorp/setup-terraform@v3
 
         - name: Terraform Init
+          working-directory: ./solution_terraform
           run: |
             pwd
             ls -trl 
             terraform init -input=false  
 
         - name: Terraform Plan
+          working-directory: ./solution_terraform
           run: terraform plan -var="project_id=${{ secrets.gcp_project_id }}" -var="region=${{ github.event.inputs.region }}" -out=solution_terraform
 
 
         - name: Terraform Apply
+          working-directory: ./solution_terraform
           env:
             TF_LOG: DEBUG
             TF_LOG_PATH: terraform-debug.log
@@ -151,7 +154,12 @@
               --set service.type=LoadBalancer
 
         - name: Deploy Helm chart
+          working-directory: ./solution_terraform
           run: |
+            pwd
+            echo $GITHUB_WORKSPACE
+            pwd
+            
             helm upgrade --install istio-cas-ingress ${{ env.HELM_CHART_DIR }} \
               --namespace default \
               --create-namespace \
