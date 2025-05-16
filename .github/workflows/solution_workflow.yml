@@ -87,6 +87,66 @@ jobs:
           echo "CLUSTER_NAME=${{ steps.terraform.outputs.CLUSTER_NAME }}" >> $GITHUB_ENV
           echo "CLUSTER_ENDPOINT=${{ steps.terraform.outputs.CLUSTER_ENDPOINT }}" >> $GITHUB_ENV
 
+      - name: Configure kubectl
+        run: |
+          gcloud container clusters get-credentials ${{ env.CLUSTER_NAME }} \
+            --region ${{ github.event.inputs.region }} \
+            --project ${{ github.event.inputs.project_id }}
+
+      - name: Set up Helm
+        uses: azure/setup-helm@v3
+        with:
+          version: 'v3.12.0'
+
+      - name: Install dependencies
+        run: |
+          helm repo add jetstack https://charts.jetstack.io
+          helm repo add istio https://istio-release.storage.googleapis.com/charts
+          helm repo update
+
+          # Install cert-manager if not exists
+          helm upgrade --install cert-manager jetstack/cert-manager \
+            --namespace cert-manager \
+            --create-namespace \
+            --version v1.12.0 \
+            --set installCRDs=true \
+            --set serviceAccount.annotations."iam\.gke\.io/gcp-service-account"="cert-manager-cas-issuer-sa@${{ github.event.inputs.project_id }}.iam.gserviceaccount.com"
+
+          # Install Istio if not exists
+          helm upgrade --install istio-base istio/base \
+            --namespace istio-system \
+            --create-namespace \
+            --version 1.18.0
+
+          helm upgrade --install istiod istio/istiod \
+            --namespace istio-system \
+            --version 1.18.0 \
+            --wait
+
+          helm upgrade --install istio-ingressgateway istio/gateway \
+            --namespace istio-system \
+            --version 1.18.0 \
+            --set service.type=LoadBalancer
+
+      - name: Deploy Helm chart
+        run: |
+          helm upgrade --install istio-cas-ingress ${{ env.HELM_CHART_DIR }} \
+            --namespace default \
+            --create-namespace \
+            --set casIssuer.projectId=${{ github.event.inputs.project_id }} \
+            --set casIssuer.location=${{ github.event.inputs.region }} \
+            --set casIssuer.caPool=${{ env.CA_POOL_NAME }} \
+            --set ingress.hostname=${{ github.event.inputs.hostname }} \
+            --wait
+
+      - name: Verify resources
+        run: |
+          kubectl get clusterissuer
+          kubectl get certificate
+          kubectl get secret ${{ github.event.inputs.hostname }}-tls
+          kubectl get gateway
+          kubectl get virtualservice
+
   deploy-application:
     name: Deploy Application
     needs: deploy-infrastructure
