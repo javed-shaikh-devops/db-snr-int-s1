@@ -156,10 +156,9 @@
               --set service.type=LoadBalancer
 
         - name: Deploy Helm chart
-          working-directory: ./solution_terraform
           run: |
             pwd
-            echo $GITHUB_WORKSPACE
+            cd $GITHUB_WORKSPACE
             pwd
             
             helm upgrade --install istio-cas-ingress ${{ env.HELM_CHART_DIR }} \
