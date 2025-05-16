@@ -87,6 +87,9 @@ jobs:
           echo "CLUSTER_NAME=${{ steps.terraform.outputs.CLUSTER_NAME }}" >> $GITHUB_ENV
           echo "CLUSTER_ENDPOINT=${{ steps.terraform.outputs.CLUSTER_ENDPOINT }}" >> $GITHUB_ENV
 
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
       - name: Configure kubectl
         run: |
           gcloud container clusters get-credentials ${{ env.CLUSTER_NAME }} \
