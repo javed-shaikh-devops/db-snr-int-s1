@@ -103,12 +103,6 @@
           with:
             version: 'v3.12.0'
 
-        - name: Grant cluster-admin to GitHub Actions identity
-          run: |
-            kubectl create clusterrolebinding github-actions-admin-binding \
-              --clusterrole=cluster-admin \
-              --user=terraform-sa@${{ github.event.inputs.project_id }}.iam.gserviceaccount.com || true
-
         - name: Grant cluster-admin to cert-manager-cas-issuer-sa
           run: |
             kubectl create clusterrolebinding cert-manager-cas-issuer-admin-binding \
@@ -118,17 +112,6 @@
 
         - name: Configure Helm Repo's
           run: |
-            kubectl config current-context
-            kubectl config view --minify | grep user:
-            
-            kubectl auth can-i create clusterroles
-            kubectl auth can-i create clusterrolebindings
-            kubectl auth can-i create roles --namespace cert-manager
-            kubectl auth can-i create rolebindings --namespace cert-manager
-            
-            kubectl get clusterrolebinding -o yaml | grep -C 5 "YOUR_USER_OR_SA"
-            
-            
             helm repo add jetstack https://charts.jetstack.io
             helm repo add istio https://istio-release.storage.googleapis.com/charts
             helm repo update
