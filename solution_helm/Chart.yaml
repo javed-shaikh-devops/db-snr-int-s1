@@ -12,6 +12,8 @@ dependencies:
     version: "1.22.1"
     repository: "https://istio-release.storage.googleapis.com/charts"
     alias: istio-ingressgateway
+    condition: istio-ingressgateway.enabled
   - name: istiod
     version: "1.22.1"
     repository: "https://istio-release.storage.googleapis.com/charts"
+    condition: istiod.enabled

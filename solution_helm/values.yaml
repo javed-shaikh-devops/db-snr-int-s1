@@ -1,12 +1,12 @@
 cert-manager:
-  enabled: true
+  enabled: false # set to true only if you want to install it via this chart
   installCRDs: true
   serviceAccount:
     annotations:
       iam.gke.io/gcp-service-account: "cert-manager-cas-issuer-sa@${project_id}.iam.gserviceaccount.com"
 
 istio:
-  enabled: true
+  enabled: false
   gateways:
     istio-ingressgateway:
       service:
@@ -19,5 +19,6 @@ casIssuer:
   issuerName: "cas-issuer"
 
 ingress:
+  enabled: false
   hostname: "example.com"
   secretName: "myapp-ingress-tls"
