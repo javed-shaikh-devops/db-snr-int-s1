@@ -89,6 +89,8 @@ jobs:
 
       - name: Set up Cloud SDK
         uses: google-github-actions/setup-gcloud@v2
+        with:
+          install_components: 'gke-gcloud-auth-plugin'
 
       - name: Configure kubectl
         run: |
@@ -107,6 +109,9 @@ jobs:
           helm repo add istio https://istio-release.storage.googleapis.com/charts
           helm repo update
 
+      - name: Install Cert Manager
+        run: |
+          
           # Install cert-manager if not exists
           helm upgrade --install cert-manager jetstack/cert-manager \
             --namespace cert-manager \
@@ -115,6 +120,9 @@ jobs:
             --set installCRDs=true \
             --set serviceAccount.annotations."iam\.gke\.io/gcp-service-account"="cert-manager-cas-issuer-sa@${{ github.event.inputs.project_id }}.iam.gserviceaccount.com"
 
+      - name: Install Istio
+        run: |
+          
           # Install Istio if not exists
           helm upgrade --install istio-base istio/base \
             --namespace istio-system \
