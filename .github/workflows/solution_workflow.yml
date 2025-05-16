@@ -78,6 +78,7 @@
 
 
         - name: Get Terraform outputs
+          working-directory: ./solution_terraform
           id: terraform
           run: |
             echo "CA_POOL_NAME=$(terraform output -raw ca_pool_name)" >> $GITHUB_OUTPUT
@@ -85,6 +86,7 @@
             echo "CLUSTER_ENDPOINT=$(terraform output -raw cluster_endpoint)" >> $GITHUB_OUTPUT
 
         - name: Save outputs
+          working-directory: ./solution_terraform
           run: |
             echo "CA_POOL_NAME=${{ steps.terraform.outputs.CA_POOL_NAME }}" >> $GITHUB_ENV
             echo "CLUSTER_NAME=${{ steps.terraform.outputs.CLUSTER_NAME }}" >> $GITHUB_ENV
