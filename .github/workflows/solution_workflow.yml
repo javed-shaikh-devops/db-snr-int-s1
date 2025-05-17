@@ -150,13 +150,12 @@
               helm upgrade --install cas-issuer ./cas-issuer-chart \
                 --namespace cert-manager \
                 --create-namespace \
-                --set installCRDs=true \
-                --set serviceAccount.create=true \
                 --set image.repository=quay.io/jetstack/cert-manager-google-cas-issuer \
                 --set image.tag=v0.9.0 \
-                --set serviceAccount.annotations."iam\.gke\.io/gcp-service-account"="cert-manager-cas-issuer-sa@${{ github.event.inputs.project_id }}.iam.gserviceaccount.com" \
+                --set serviceAccount.annotations."iam\.gke\.io/gcp-service-account"="cert-manager-cas-issuer-sa@${{ github.event.inputs.project_id }}.iam.gserviceaccount.com"
                 --debug \
                 --wait
+    
             else
               echo "Google CAS Issuer already installed"
             fi
@@ -199,7 +198,7 @@
               --set casIssuer.location=${{ github.event.inputs.region }} \
               --set casIssuer.caPool=${{ env.CA_POOL_NAME }} \
               --set casIssuer.signerName="projects/${{ github.event.inputs.project_id }}/locations/${{ github.event.inputs.region }}/caPools/${{ env.CA_POOL_NAME }}/certificateAuthorities/root-ca" \
-              --set serviceAccount.annotations."iam\.gke\.io/gcp-service-account"="cert-manager-cas-issuer-sa@${var.project_id}.iam.gserviceaccount.com" \
+              --set serviceAccount.annotations."iam\.gke\.io/gcp-service-account"="cert-manager-cas-issuer-sa@${{ github.event.inputs.project_id }}.iam.gserviceaccount.com" \
               --wait
 
         - name: Verify resources
