@@ -1,0 +1,23 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.myapp.name }}
+  namespace: {{ .Values.myapp.namespace }}
+  labels:
+    app: {{ .Values.myapp.name }}
+spec:
+  replicas: {{ .Values.myapp.replicas }}
+  selector:
+    matchLabels:
+      app: {{ .Values.myapp.name }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.myapp.name }}
+    spec:
+      containers:
+        - name: {{ .Values.myapp.name }}
+          image: {{ .Values.myapp.image }}
+          args: {{- toYaml .Values.myapp.args | nindent 12 }}
+          ports:
+            - containerPort: {{ .Values.myapp.containerPort }}

@@ -13,6 +13,6 @@ spec:
         protocol: HTTPS
       tls:
         mode: SIMPLE
-        credentialName: {{ .Values.ingress.secretName }}
+        credentialName: myapp-ingress-tls
       hosts:
         - {{ .Values.ingress.hostname }}

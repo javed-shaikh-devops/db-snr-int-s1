@@ -2,8 +2,8 @@ apiVersion: cas-issuer.jetstack.io/v1beta1
 kind: GoogleCASClusterIssuer
 metadata:
   name: {{ .Values.casIssuer.issuerName }}
+  namespace: istio-system
 spec:
     project: {{ .Values.casIssuer.projectId }}
     location: {{ .Values.casIssuer.location }}
     caPool: {{ .Values.casIssuer.caPool }}
-    signer: ""
