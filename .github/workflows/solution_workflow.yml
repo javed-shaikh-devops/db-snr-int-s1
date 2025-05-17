@@ -134,6 +134,8 @@
               --set serviceAccount.create=true \
               --set serviceAccount.name=cert-manager-cas-issuer-sa \
               --set serviceAccount.annotations."iam\.gke\.io/gcp-service-account"="cert-manager-cas-issuer-sa@${{ github.event.inputs.project_id }}.iam.gserviceaccount.com"
+            else
+              echo "cert-manager already installed"
             fi
             kubectl get serviceaccount -n cert-manager
 
@@ -156,6 +158,8 @@
               --namespace istio-system \
               --version 1.18.0 \
               --set service.type=LoadBalancer
+            else
+              echo "Isto already installed"
             fi
 
         - name: Deploy Helm chart

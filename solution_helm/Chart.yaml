@@ -8,12 +8,3 @@ dependencies:
     version: "~1.14.0"
     repository: "https://charts.jetstack.io"
     condition: cert-manager.enabled
-  - name: gateway
-    version: "1.22.1"
-    repository: "https://istio-release.storage.googleapis.com/charts"
-    alias: istio-ingressgateway
-    condition: istio-ingressgateway.enabled
-  - name: istiod
-    version: "1.22.1"
-    repository: "https://istio-release.storage.googleapis.com/charts"
-    condition: istiod.enabled
