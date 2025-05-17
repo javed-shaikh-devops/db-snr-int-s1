@@ -136,6 +136,18 @@
             fi
             kubectl get serviceaccount -n cert-manager
 
+        - name: Install Google CAS Issuer
+          run: |
+            if ! helm status cas-issuer -n cert-manager >/dev/null 2>&1; then
+              helm upgrade --install cas-issuer jetstack/cert-manager-cas-issuer \
+                --namespace cert-manager \
+                --create-namespace \
+                --set serviceAccount.annotations."iam\.gke\.io/gcp-service-account"="cert-manager-cas-issuer-sa@${{ github.event.inputs.project_id }}.iam.gserviceaccount.com" \
+                --wait
+            else
+              echo "Google CAS Issuer already installed"
+            fi
+
         - name: Install Istio
           run: |
             
@@ -173,6 +185,7 @@
               --set casIssuer.projectId=${{ github.event.inputs.project_id }} \
               --set casIssuer.location=${{ github.event.inputs.region }} \
               --set casIssuer.caPool=${{ env.CA_POOL_NAME }} \
+              --set casIssuer.signerName="projects/${{ github.event.inputs.project_id }}/locations/${{ github.event.inputs.region }}/caPools/${{ env.CA_POOL_NAME }}/certificateAuthorities/root-ca" \
               --wait
 
         - name: Verify resources

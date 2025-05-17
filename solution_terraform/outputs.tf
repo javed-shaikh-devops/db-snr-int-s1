@@ -17,3 +17,7 @@ output "cert_manager_sa_email" {
   description = "The email of the cert-manager service account"
   value       = google_service_account.cert-manager-cas-issuer-sa.email
 }
+
+output "root_ca_name" {
+  value = google_privateca_certificate_authority.root_ca.name
+}

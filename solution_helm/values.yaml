@@ -15,7 +15,7 @@ casIssuer:
   projectId: ""
   location: ""
   caPool: ""
-  issuerName: "cas-issuer"
+  issuerName: "google-cas-issuer"
 
 ingress:
   hostname: "example.com"
