@@ -1,3 +1,12 @@
+terraform {
+  required_providers {
+    google = {
+      source  = "hashicorp/google"
+      version = ">= 4.0.0" # Recommended version
+    }
+  }
+}
+
 # Enable required APIs
 resource "google_project_service" "apis" {
   for_each = toset([
@@ -238,4 +247,66 @@ resource "google_service_account_iam_member" "cert_manager_workload_identity" {
   service_account_id = "projects/${var.project_id}/serviceAccounts/${google_service_account.cert-manager-cas-issuer-sa.email}"
   role               = "roles/iam.workloadIdentityUser"
   member             = "serviceAccount:${var.project_id}.svc.id.goog[cert-manager/cert-manager-cas-issuer-sa]"
+}
+
+data "google_client_config" "default" {}
+
+provider "kubernetes" {
+  host = "https://${google_container_cluster.primary.endpoint}"
+
+  cluster_ca_certificate = base64decode(
+    google_container_cluster.primary.master_auth[0].cluster_ca_certificate
+  )
+
+  token = data.google_client_config.default.access_token
+
+}
+
+resource "kubernetes_cluster_role" "cert_manager_cas_issuer" {
+  depends_on = [google_container_node_pool.primary_nodes]
+
+  metadata {
+    name = "cert-manager-google-cas-issuer"
+  }
+
+  rule {
+    api_groups = ["cert-manager.io"]
+    resources  = ["certificaterequests"]
+    verbs      = ["get", "list", "watch", "update", "create", "patch"]
+  }
+
+  rule {
+    api_groups = ["cert-manager.io"]
+    resources  = ["certificaterequests/status"]
+    verbs      = ["update", "patch"]
+  }
+
+  rule {
+    api_groups = ["cas-issuer.jetstack.io"]
+    resources  = ["googlecasissuers", "googlecasclusterissuers"]
+    verbs      = ["get", "list", "watch"]
+  }
+}
+
+resource "kubernetes_cluster_role_binding" "cert_manager_cas_issuer" {
+  depends_on = [
+    kubernetes_cluster_role.cert_manager_cas_issuer,
+    google_service_account_iam_member.cert_manager_workload_identity
+  ]
+
+  metadata {
+    name = "cert-manager-google-cas-issuer"
+  }
+
+  role_ref {
+    api_group = "rbac.authorization.k8s.io"
+    kind      = "ClusterRole"
+    name      = kubernetes_cluster_role.cert_manager_cas_issuer.metadata[0].name
+  }
+
+  subject {
+    kind      = "ServiceAccount"
+    name      = "cert-manager-cas-issuer-sa"
+    namespace = "cert-manager"
+  }
 }
