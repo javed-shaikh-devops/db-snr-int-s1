@@ -110,7 +110,6 @@
             kubectl create clusterrolebinding cert-manager-cas-issuer-admin-binding \
               --clusterrole=cluster-admin \
               --user=cert-manager-cas-issuer-sa@${{ github.event.inputs.project_id }}.iam.gserviceaccount.com || true
-#              --serviceaccount=cert-manager:cert-manager-cas-issuer-sa || true
 
         - name: Configure Helm Repo's
           run: |
@@ -136,10 +135,19 @@
             fi
             kubectl get serviceaccount -n cert-manager
 
-        - name: Install Google CAS Issuer
+        - name: Install Google CAS Issuer if not present
           run: |
             if ! helm status cas-issuer -n cert-manager >/dev/null 2>&1; then
-              helm upgrade --install cas-issuer jetstack/cert-manager-cas-issuer \
+              echo "CAS Issuer not found. Installing..."
+
+              # Clone the chart repo
+              git clone https://github.com/jetstack/google-cas-issuer.git
+
+              # Move chart to working dir 
+              mv google-cas-issuer/deploy/charts/google-cas-issuer ./cas-issuer-chart
+
+              # Install the CAS Issuer chart
+              helm upgrade --install cas-issuer ./cas-issuer-chart \
                 --namespace cert-manager \
                 --create-namespace \
                 --set serviceAccount.annotations."iam\.gke\.io/gcp-service-account"="cert-manager-cas-issuer-sa@${{ github.event.inputs.project_id }}.iam.gserviceaccount.com" \
