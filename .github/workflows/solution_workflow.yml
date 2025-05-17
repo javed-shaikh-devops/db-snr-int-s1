@@ -168,7 +168,7 @@
             helm dependency build ./solution_helm
 
             helm upgrade --install istio-cas-ingress ${{ env.HELM_CHART_DIR }} \
-              --namespace default \
+              --namespace istio-system \
               --create-namespace \
               --set casIssuer.projectId=${{ github.event.inputs.project_id }} \
               --set casIssuer.location=${{ github.event.inputs.region }} \
