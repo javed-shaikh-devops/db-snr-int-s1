@@ -6,3 +6,4 @@
 .idea/*
 *.lock.hcl
 solution_terraform/.terraform/**
+solution_terraform/Chart.lock
