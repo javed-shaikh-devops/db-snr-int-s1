@@ -150,6 +150,8 @@
               helm upgrade --install cas-issuer ./cas-issuer-chart \
                 --namespace cert-manager \
                 --create-namespace \
+                --set image.repository=quay.io/jetstack/cert-manager-google-cas-issuer \
+                --set image.tag=v0.9.0 \
                 --set serviceAccount.annotations."iam\.gke\.io/gcp-service-account"="cert-manager-cas-issuer-sa@${{ github.event.inputs.project_id }}.iam.gserviceaccount.com" \
                 --wait
             else
