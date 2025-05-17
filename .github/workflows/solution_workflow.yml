@@ -127,13 +127,20 @@
               --create-namespace \
               --version v1.12.0 \
               --set installCRDs=true \
-              --set serviceAccount.create=true \
               --set serviceAccount.name=cert-manager-cas-issuer-sa \
               --set serviceAccount.annotations."iam\.gke\.io/gcp-service-account"="cert-manager-cas-issuer-sa@${{ github.event.inputs.project_id }}.iam.gserviceaccount.com"
             else
               echo "cert-manager already installed"
             fi
             kubectl get serviceaccount -n cert-manager
+
+        - name: Install CAS Issuer CRDs
+          run: |
+            kubectl apply -f https://raw.githubusercontent.com/jetstack/google-cas-issuer/v0.9.0/deploy/crds/cas-issuer-crds.yaml
+
+        - name: Cleanup existing CAS CRDs if needed (Optional)
+          run: |
+            kubectl delete crd googlecasclusterissuers.cas-issuer.jetstack.io --ignore-not-found
 
         - name: Install Google CAS Issuer if not present
           run: |
