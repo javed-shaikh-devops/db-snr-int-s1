@@ -54,7 +54,7 @@ resource "random_id" "suffix" {
 
 # CAS CA Pool
 resource "google_privateca_ca_pool" "ca_pool" {
-  name     = "ca-pool-${random_id.suffix.hex}"
+  name     = "db-ca-pool"
   location = var.region
   tier     = "ENTERPRISE"
   publishing_options {

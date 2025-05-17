@@ -202,7 +202,7 @@
           run: |
             kubectl get clusterissuer
             kubectl get certificate
-            kubectl get secret ${{ github.event.inputs.hostname }}-tls
+            kubectl get secret myapp-ingress-tls -n istio-system
             kubectl get gateway
             kubectl get virtualservice
   

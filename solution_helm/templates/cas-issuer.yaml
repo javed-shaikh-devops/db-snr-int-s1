@@ -7,3 +7,4 @@ spec:
     project: {{ .Values.casIssuer.projectId }}
     location: {{ .Values.casIssuer.location }}
     caPool: {{ .Values.casIssuer.caPool }}
+    certificateAuthorityId : root-ca

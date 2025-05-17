@@ -12,9 +12,9 @@ istio:
         type: LoadBalancer
 
 casIssuer:
-  projectId: ""
-  location: ""
-  caPool: ""
+  projectId: "db-demo-int"
+  location: "europe-west1"
+  caPool: "db-ca-pool"
   issuerName: "google-cas-issuer"
 
 ingress:
