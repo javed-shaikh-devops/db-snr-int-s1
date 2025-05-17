@@ -141,18 +141,24 @@
               echo "CAS Issuer not found. Installing..."
 
               # Clone the chart repo
-              git clone https://github.com/jetstack/google-cas-issuer.git
+              # git clone https://github.com/jetstack/google-cas-issuer.git
 
               # Move chart to working dir 
-              mv google-cas-issuer/deploy/charts/google-cas-issuer ./cas-issuer-chart
+              # mv google-cas-issuer/deploy/charts/google-cas-issuer ./cas-issuer-chart
 
               # Install the CAS Issuer chart
-              helm upgrade --install cas-issuer ./cas-issuer-chart \
+              helm repo add jetstack https://charts.jetstack.io
+              helm repo update  
+              helm upgrade --install cas-issuer jetstack/cert-manager-google-cas-issuer \
+                --version v0.9.0 \
                 --namespace cert-manager \
                 --create-namespace \
+                --set rbac.create=true \  # Explicitly enable RBAC (default)
+                --set installCRDs=true \
+                --set serviceAccount.create=true \
                 --set image.repository=quay.io/jetstack/cert-manager-google-cas-issuer \
                 --set image.tag=v0.9.0 \
-                --set serviceAccount.annotations."iam\.gke\.io/gcp-service-account"="cert-manager-cas-issuer-sa@${{ github.event.inputs.project_id }}.iam.gserviceaccount.com" \
+                --set serviceAccount.annotations."iam\.gke\.io/gcp-service-account"="cert-manager-cas-issuer-sa@${GCP_PROJECT}.iam.gserviceaccount.com" \
                 --wait
             else
               echo "Google CAS Issuer already installed"
@@ -196,6 +202,7 @@
               --set casIssuer.location=${{ github.event.inputs.region }} \
               --set casIssuer.caPool=${{ env.CA_POOL_NAME }} \
               --set casIssuer.signerName="projects/${{ github.event.inputs.project_id }}/locations/${{ github.event.inputs.region }}/caPools/${{ env.CA_POOL_NAME }}/certificateAuthorities/root-ca" \
+              --set serviceAccount.annotations."iam\.gke\.io/gcp-service-account"="cert-manager-cas-issuer-sa@${var.project_id}.iam.gserviceaccount.com" \
               --wait
 
         - name: Verify resources
