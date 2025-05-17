@@ -3,9 +3,7 @@ kind: ClusterIssuer
 metadata:
   name: {{ .Values.casIssuer.issuerName }}
 spec:
-  ca:
-    secretName: cas-issuer-root-ca
-  googlecas:
+  googleas:
     project: {{ .Values.casIssuer.projectId }}
     location: {{ .Values.casIssuer.location }}
     caPool: {{ .Values.casIssuer.caPool }}

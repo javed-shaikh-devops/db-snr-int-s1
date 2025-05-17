@@ -2,6 +2,7 @@ apiVersion: networking.istio.io/v1alpha3
 kind: Gateway
 metadata:
   name: {{ .Values.ingress.hostname }}-gateway
+  namespace: {{ .Values.ingress.namespace }}
 spec:
   selector:
     istio: ingressgateway

@@ -6,7 +6,7 @@ spec:
   hosts:
     - {{ .Values.ingress.hostname }}
   gateways:
-    - {{ .Values.ingress.hostname }}-gateway
+    - {{ .Values.ingress.namespace }}/{{ .Values.ingress.hostname }}-gateway
   http:
       - route:
         - destination:

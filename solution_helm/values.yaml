@@ -6,7 +6,6 @@ cert-manager:
       iam.gke.io/gcp-service-account: "cert-manager-cas-issuer-sa@${project_id}.iam.gserviceaccount.com"
 
 istio:
-  enabled: false
   gateways:
     istio-ingressgateway:
       service:
@@ -19,6 +18,6 @@ casIssuer:
   issuerName: "cas-issuer"
 
 ingress:
-  enabled: false
   hostname: "example.com"
+  namespace: "istio-system"
   secretName: "myapp-ingress-tls"
