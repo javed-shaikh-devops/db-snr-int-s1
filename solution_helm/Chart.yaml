@@ -3,8 +3,4 @@ name: istio-cas-ingress
 description: A Helm chart for Istio Ingress with CAS certificates
 version: 0.1.0
 appVersion: 1.0.0
-dependencies:
-  - name: cert-manager
-    version: "~1.14.0"
-    repository: "https://charts.jetstack.io"
-    condition: cert-manager.enabled
+

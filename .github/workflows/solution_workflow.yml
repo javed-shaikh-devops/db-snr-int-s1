@@ -7,7 +7,7 @@
           required: true
         region:
           description: 'GCP Region'
-          default: 'us-central1'
+          default: 'europe-west1'
 
   env:
     CLUSTER_NAME: istio-cas-demo
@@ -125,7 +125,7 @@
             helm upgrade --install cert-manager jetstack/cert-manager \
               --namespace cert-manager \
               --create-namespace \
-              --version v1.12.0 \
+              --version v1.16.0 \
               --set installCRDs=true \
               --set serviceAccount.name=cert-manager-cas-issuer-sa \
               --set serviceAccount.annotations."iam\.gke\.io/gcp-service-account"="cert-manager-cas-issuer-sa@${{ github.event.inputs.project_id }}.iam.gserviceaccount.com"
@@ -134,35 +134,25 @@
             fi
             kubectl get serviceaccount -n cert-manager
 
-        - name: Install CAS Issuer CRDs
-          run: |
-            kubectl apply -f https://raw.githubusercontent.com/jetstack/google-cas-issuer/v0.9.0/deploy/crds/cas-issuer-crds.yaml
-
-        - name: Cleanup existing CAS CRDs if needed (Optional)
-          run: |
-            kubectl delete crd googlecasclusterissuers.cas-issuer.jetstack.io --ignore-not-found
-
         - name: Install Google CAS Issuer if not present
           run: |
             if ! helm status cas-issuer -n cert-manager >/dev/null 2>&1; then
               echo "CAS Issuer not found. Installing..."
 
               # Clone the chart repo
-              git clone https://github.com/jetstack/google-cas-issuer.git
+              https://github.com/cert-manager/google-cas-issuer.git
 
               # Move chart to working dir 
-              mv google-cas-issuer/deploy/charts/google-cas-issuer ./cas-issuer-chart
+              mv deploy/charts/google-cas-issuer ./cas-issuer-chart
 
               # Install the CAS Issuer chart
               helm upgrade --install cas-issuer ./cas-issuer-chart \
                 --namespace cert-manager \
                 --create-namespace \
+                --set crds.enabled=true \
                 --set image.repository=quay.io/jetstack/cert-manager-google-cas-issuer \
                 --set image.tag=v0.9.0 \
                 --set serviceAccount.annotations."iam\.gke\.io/gcp-service-account"="cert-manager-cas-issuer-sa@${{ github.event.inputs.project_id }}.iam.gserviceaccount.com"
-                --debug \
-                --wait
-    
             else
               echo "Google CAS Issuer already installed"
             fi
@@ -199,7 +189,7 @@
             helm dependency build ./solution_helm
 
             helm upgrade --install istio-cas-ingress ${{ env.HELM_CHART_DIR }} \
-              --namespace istio-system \
+              --namespace default \
               --create-namespace \
               --set casIssuer.projectId=${{ github.event.inputs.project_id }} \
               --set casIssuer.location=${{ github.event.inputs.region }} \
@@ -210,9 +200,9 @@
 
         - name: Verify resources
           run: |
-            kubectl get clusterissuer
+            kubectl get googlecasclusterissuers -A
             kubectl get certificate
+            kubectl get gateway -n istio-system
+            kubectl get virtualservice -n istio-system
+            sleep 60
             kubectl get secret myapp-ingress-tls -n istio-system
-            kubectl get gateway
-            kubectl get virtualservice
-  

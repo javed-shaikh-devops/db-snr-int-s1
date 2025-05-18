@@ -1,10 +1,14 @@
-apiVersion: cas-issuer.jetstack.io/v1beta1
-kind: GoogleCASClusterIssuer
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
 metadata:
-  name: {{ .Values.casIssuer.issuerName }}
-  namespace: istio-system
+  name: google-cas-issuer
 spec:
-    project: {{ .Values.casIssuer.projectId }}
-    location: {{ .Values.casIssuer.location }}
-    caPool: {{ .Values.casIssuer.caPool }}
-    certificateAuthorityId : root-ca
+  googleCAS:
+    project: "db-demo-int"
+    location: "europe-west1"
+    caPool: "db-ca-pool4"
+    signer: "projects/db-demo-int/locations/europe-west1/caPools/db-ca-pool4"
+    workloadIdentity:
+      serviceAccountRef:
+        name: "cert-manager-cas-issuer-sa"
+        namespace: "cert-manager"
