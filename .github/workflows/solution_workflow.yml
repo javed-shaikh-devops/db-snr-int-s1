@@ -110,12 +110,16 @@ jobs:
             --namespace cert-manager \
             --create-namespace \
             --version v1.17.0 \
-            --set crds.enabled=true \
+            --set crds.enabled=true 
 
       - name: Install Google CAS Issuer
         run: |
-          helm install google-cas-issuer jetstack/cert-manager-google-cas-issuer \
-            -n my-app --create-namespace -f values.yaml
+          
+          helm install google-cas-issuer ./cert-manager-google-cas-issuer \
+            --namespace cert-manager \
+            --create-namespace \
+            --version v0.9.0 \
+            --set crds.enabled=true
 
       - name: Install Istio
         run: |
@@ -151,10 +155,10 @@ jobs:
           helm upgrade --install istio-cas-ingress ${{ env.HELM_CHART_DIR }} \
             --namespace default \
             --create-namespace \
-            --set casIssuer.projectId=${{ github.event.inputs.project_id }} \
+            --set casIssuer.project=${{ github.event.inputs.project_id }} \
             --set casIssuer.location=${{ github.event.inputs.region }} \
-            --set casIssuer.caPool=${{ env.CA_POOL_NAME }} \
-            --set casIssuer.signerName="projects/${{ github.event.inputs.project_id }}/locations/${{ github.event.inputs.region }}/caPools/${{ env.CA_POOL_NAME }}/certificateAuthorities/root-ca" \
+            --set casIssuer.caPoolId=${{ env.CA_POOL_NAME }} \
+#            --set casIssuer.signerName="projects/${{ github.event.inputs.project_id }}/locations/${{ github.event.inputs.region }}/caPools/${{ env.CA_POOL_NAME }}/certificateAuthorities/root-ca" \
             --set serviceAccount.annotations."iam\.gke\.io/gcp-service-account"="cert-manager-cas-issuer-sa@${{ github.event.inputs.project_id }}.iam.gserviceaccount.com" \
             --wait
 
