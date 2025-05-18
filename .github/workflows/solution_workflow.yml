@@ -118,7 +118,11 @@ jobs:
              --set serviceAccount.name=cert-manager-cas-issuer-sa \
              --set serviceAccount.annotations."iam\.gke\.io/gcp-service-account"="cert-manager-cas-issuer-sa@${{ github.event.inputs.project_id }}.iam.gserviceaccount.com"
                
-          kubectl get serviceaccount -n cert-manager
+
+           kubectl get serviceaccount -n cert-manager
+
+
+
 
       - name: Install Google CAS Issuer if not present
         run: |
