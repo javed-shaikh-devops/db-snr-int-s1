@@ -109,18 +109,14 @@ jobs:
           helm upgrade --install cert-manager jetstack/cert-manager \
             --namespace cert-manager \
             --create-namespace \
-            --version v1.15.3 \
-            --set installCRDs=true \
-            --set serviceAccount.name=cert-manager-cas-issuer-sa \
-            --set serviceAccount.annotations."iam\.gke\.io/gcp-service-account"="cert-manager-cas-issuer-sa@${{ github.event.inputs.project_id }}.iam.gserviceaccount.com"
+            --version v1.17.0 \
+            --set crds.enabled=true \
 
       - name: Install Google CAS Issuer
         run: |
-          helm upgrade --install google-cas-issuer jetstack/cert-manager-google-cas-issuer \
-            --namespace cert-manager \
-            --version v0.9.0 \
-            --set serviceAccount.name=cert-manager-cas-issuer-sa \
-            --set serviceAccount.annotations."iam\.gke\.io/gcp-service-account"="cert-manager-cas-issuer-sa@${{ github.event.inputs.project_id }}.iam.gserviceaccount.com"
+          helm install google-cas-issuer jetstack/cert-manager-google-cas-issuer \
+            -n my-app --create-namespace -f values.yaml
+
       - name: Install Istio
         run: |
           
