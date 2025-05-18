@@ -6,8 +6,8 @@ metadata:
 spec:
   project: "db-demo-int"
   location: "europe-west1"
-  caPoolId: "db-ca-pool5"
-#    signer: "projects/db-demo-int/locations/us-central1/caPools/db-ca-pool5"
+  caPoolId: "db-ca-pool6"
+#    signer: "projects/db-demo-int/locations/us-central1/caPools/db-ca-pool6"
   workloadIdentity:
     serviceAccountRef:
       name: "cert-manager-cas-issuer-sa"
@@ -22,7 +22,7 @@ metadata:
 spec:
   project: "db-demo-int"
   location: "europe-west1"
-  caPoolId: "db-ca-pool5"
+  caPoolId: "db-ca-pool6"
   workloadIdentity:
     serviceAccountRef:
       name: "cert-manager-cas-issuer-sa"
