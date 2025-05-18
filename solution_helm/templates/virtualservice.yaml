@@ -14,3 +14,4 @@ spec:
             host: myapp-service.default.svc.cluster.local
             port:
               number: 80
+              

@@ -21,3 +21,4 @@ spec:
           args: {{- toYaml .Values.myapp.args | nindent 12 }}
           ports:
             - containerPort: {{ .Values.myapp.containerPort }}
+
