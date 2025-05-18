@@ -1,3 +1,12 @@
+terraform {
+  required_providers {
+    google = {
+      source  = "hashicorp/google"
+      version = ">= 4.0.0" # Recommended version
+    }
+  }
+}
+
 # Enable required APIs
 resource "google_project_service" "apis" {
   for_each = toset([
@@ -54,7 +63,7 @@ resource "random_id" "suffix" {
 
 # CAS CA Pool
 resource "google_privateca_ca_pool" "ca_pool" {
-  name     = "ca-pool-${random_id.suffix.hex}"
+  name     = "db-ca-pool5"
   location = var.region
   tier     = "ENTERPRISE"
   publishing_options {
@@ -237,5 +246,5 @@ resource "google_container_node_pool" "primary_nodes" {
 resource "google_service_account_iam_member" "cert_manager_workload_identity" {
   service_account_id = "projects/${var.project_id}/serviceAccounts/${google_service_account.cert-manager-cas-issuer-sa.email}"
   role               = "roles/iam.workloadIdentityUser"
-  member             = "serviceAccount:${var.project_id}.svc.id.goog[cert-manager/cert-manager]"
+  member             = "serviceAccount:${var.project_id}.svc.id.goog[cert-manager/cert-manager-cas-issuer-sa]"
 }

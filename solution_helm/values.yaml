@@ -1,23 +1,33 @@
 cert-manager:
-  enabled: true
+  enabled: false # set to true only if you want to install it via this chart
   installCRDs: true
   serviceAccount:
     annotations:
       iam.gke.io/gcp-service-account: "cert-manager-cas-issuer-sa@${project_id}.iam.gserviceaccount.com"
 
 istio:
-  enabled: true
   gateways:
     istio-ingressgateway:
       service:
         type: LoadBalancer
 
 casIssuer:
-  projectId: ""
+  projectId: "db-demo-int"
   location: "europe-west1"
-  caPool: ""
-  issuerName: "cas-issuer"
+  caPool: "db-ca-pool5"
+  issuerName: "google-cas-issuer"
 
 ingress:
   hostname: "example.com"
+  namespace: "istio-system"
   secretName: "myapp-ingress-tls"
+
+myapp:
+  name: myapp
+  namespace: default
+  serviceName: myapp-service
+  replicas: 1
+  image: hashicorp/http-echo
+  args:
+    - "-text=Hello from myapp-service"
+  containerPort: 5678

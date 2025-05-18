@@ -1,12 +1,13 @@
 apiVersion: networking.istio.io/v1alpha3
 kind: VirtualService
 metadata:
-  name: {{ .Values.ingress.hostname }}-vs
+  name: example-com-vs
+  namespace: {{ .Values.ingress.namespace }}
 spec:
   hosts:
     - {{ .Values.ingress.hostname }}
   gateways:
-    - {{ .Values.ingress.hostname }}-gateway
+    - {{ .Values.ingress.namespace }}/example-com-gateway
   http:
       - route:
         - destination:

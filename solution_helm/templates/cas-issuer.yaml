@@ -1,11 +1,14 @@
 apiVersion: cert-manager.io/v1
 kind: ClusterIssuer
 metadata:
-  name: {{ .Values.casIssuer.issuerName }}
+  name: google-cas-issuer
 spec:
-  ca:
-    secretName: cas-issuer-root-ca
-  googlecas:
-    project: {{ .Values.casIssuer.projectId }}
-    location: {{ .Values.casIssuer.location }}
-    caPool: {{ .Values.casIssuer.caPool }}
+  googleCAS:
+    project: "db-demo-int"
+    location: "europe-west1"
+    caPoolId: "db-ca-pool5"
+#    signer: "projects/db-demo-int/locations/europe-west1/caPools/db-ca-pool5"
+    workloadIdentity:
+      serviceAccountRef:
+        name: "cert-manager-cas-issuer-sa"
+        namespace: "cert-manager"

@@ -1,170 +1,225 @@
-name: Deploy Istio Ingress with CAS
-on:
-  workflow_dispatch:
-    inputs:
-      project_id:
-        description: 'GCP Project ID'
-        required: true
-      region:
-        description: 'GCP Region'
-        default: 'europe-west1'
-      hostname:
-        description: 'Hostname for the ingress'
-        required: true
+  name: Deploy Istio Ingress with Google CAS
+  on:
+    workflow_dispatch:
+      inputs:
+        project_id:
+          description: 'GCP Project ID'
+          required: true
+        region:
+          description: 'GCP Region'
+          default: 'europe-west1'
 
-env:
-  CLUSTER_NAME: istio-cas-demo
-  HELM_CHART_DIR: ./solution_helm
+  env:
+    CLUSTER_NAME: istio-cas-demo
+    HELM_CHART_DIR: ./solution_helm
 
-jobs:
-  deploy-infrastructure:
-    name: Deploy Infrastructure
-    runs-on: ubuntu-latest
-    permissions:
-      contents: 'read'
-      id-token: 'write'
+  jobs:
+    deploy-infrastructure:
+      name: Deploy Infrastructure
+      runs-on: ubuntu-latest
+      permissions:
+        contents: 'read'
+        id-token: 'write'
 
-    defaults:
-      run:
-        shell: bash
-        working-directory: ./solution_terraform  # Your terraform folder
+      defaults:
+        run:
+          shell: bash
 
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v3
 
-      - name: Authenticate to Google Cloud using WIF
-        id: auth
-        uses: google-github-actions/auth@v1
-        with:
-          workload_identity_provider: ${{ secrets.OIDC_AUDIENCE  }}
-          service_account: ${{ secrets.terraform_sa }}
+      steps:
+        - name: Checkout
+          uses: actions/checkout@v3
 
-#      - name: Authenticate to GCP via OIDC
-#        env:
-#          GOOGLE_SERVICE_ACCOUNT: terraform-sa@db-demo-int.iam.gserviceaccount.com
-#          WORKLOAD_IDENTITY_PROVIDER: ${{ secrets.OIDC_AUDIENCE }}
-#        run: |
-#          gcloud iam workload-identity-pools create-cred-config "$WORKLOAD_IDENTITY_PROVIDER" \
-#            --service-account="$GOOGLE_SERVICE_ACCOUNT" \
-#            --output-file=./gcp-credentials.json \
-#            --credential-source-file=/dev/null
+        - name: Authenticate to Google Cloud using WIF
+          id: auth
+          uses: google-github-actions/auth@v1
+          with:
+            workload_identity_provider: ${{ secrets.OIDC_AUDIENCE  }}
+            service_account: ${{ secrets.terraform_sa }}
+
+  #      - name: Authenticate to GCP via OIDC
+  #        env:
+  #          GOOGLE_SERVICE_ACCOUNT: terraform-sa@db-demo-int.iam.gserviceaccount.com
+  #          WORKLOAD_IDENTITY_PROVIDER: ${{ secrets.OIDC_AUDIENCE }}
+  #        run: |
+  #          gcloud iam workload-identity-pools create-cred-config "$WORKLOAD_IDENTITY_PROVIDER" \
+  #            --service-account="$GOOGLE_SERVICE_ACCOUNT" \
+  #            --output-file=./gcp-credentials.json \
+  #            --credential-source-file=/dev/null
+  #
+  #          export GOOGLE_APPLICATION_CREDENTIALS=./gcp-credentials.json
+  #          gcloud auth login --brief --cred-file="$GOOGLE_APPLICATION_CREDENTIALS"
+  #          gcloud config set project db-demo-int
+
+        - name: Set up Terraform
+          uses: hashicorp/setup-terraform@v3
+
+        - name: Terraform Init
+          working-directory: ./solution_terraform
+          run: |
+            pwd
+            ls -trl 
+            terraform init -input=false  
+
+        - name: Terraform Plan
+          working-directory: ./solution_terraform
+          run: terraform plan -var="project_id=${{ secrets.gcp_project_id }}" -var="region=${{ github.event.inputs.region }}" -out=solution_terraform
+
+
+        - name: Terraform Apply
+          working-directory: ./solution_terraform
+          env:
+            TF_LOG: DEBUG
+            TF_LOG_PATH: terraform-debug.log
+          run: terraform apply -auto-approve -input=false -var="project_id=${{ secrets.gcp_project_id }}" -var="region=${{ github.event.inputs.region }}" solution_terraform
+
+
+        - name: Get Terraform outputs
+          working-directory: ./solution_terraform
+          id: terraform
+          run: |
+            echo "CA_POOL_NAME=$(terraform output -raw ca_pool_name)" >> $GITHUB_OUTPUT
+            echo "CLUSTER_NAME=$(terraform output -raw cluster_name)" >> $GITHUB_OUTPUT
+            echo "CLUSTER_ENDPOINT=$(terraform output -raw cluster_endpoint)" >> $GITHUB_OUTPUT
+
+        - name: Save outputs
+          working-directory: ./solution_terraform
+          run: |
+            echo "CA_POOL_NAME=${{ steps.terraform.outputs.CA_POOL_NAME }}" >> $GITHUB_ENV
+            echo "CLUSTER_NAME=${{ steps.terraform.outputs.CLUSTER_NAME }}" >> $GITHUB_ENV
+            echo "CLUSTER_ENDPOINT=${{ steps.terraform.outputs.CLUSTER_ENDPOINT }}" >> $GITHUB_ENV
+
+        - name: Set up Cloud SDK
+          uses: google-github-actions/setup-gcloud@v2
+          with:
+            install_components: 'gke-gcloud-auth-plugin'
+
+        - name: Configure kubectl
+          run: |
+            gcloud container clusters get-credentials ${{ env.CLUSTER_NAME }} \
+              --region ${{ github.event.inputs.region }} \
+              --project ${{ github.event.inputs.project_id }}
+
+        - name: Set up Helm
+          uses: azure/setup-helm@v3
+          with:
+            version: 'v3.12.0'
+
+        - name: Grant cluster-admin to cert-manager-cas-issuer-sa
+          run: |
+            kubectl create clusterrolebinding cert-manager-cas-issuer-admin-binding \
+              --clusterrole=cluster-admin \
+              --user=cert-manager-cas-issuer-sa@${{ github.event.inputs.project_id }}.iam.gserviceaccount.com || true
+
+        - name: Configure Helm Repo's
+          run: |
+            
+            helm repo add istio https://istio-release.storage.googleapis.com/charts
+            helm repo update
+
+        - name: Install Cert Manager
+          run: |
+            
+            # Install cert-manager if not exists
+#            if ! helm status cert-manager -n cert-manager >/dev/null 2>&1; then
 #
-#          export GOOGLE_APPLICATION_CREDENTIALS=./gcp-credentials.json
-#          gcloud auth login --brief --cred-file="$GOOGLE_APPLICATION_CREDENTIALS"
-#          gcloud config set project db-demo-int
+#            helm repo add jetstack https://charts.jetstack.io  --force-update
+#            helm upgrade --install cert-manager jetstack/cert-manager \
+#              --namespace cert-manager \
+#              --create-namespace \
+#              --version v1.15.3 \
+#              --set installCRDs=true \
+#              --set serviceAccount.name=cert-manager-cas-issuer-sa \
+#              --set serviceAccount.annotations."iam\.gke\.io/gcp-service-account"="cert-manager-cas-issuer-sa@${{ github.event.inputs.project_id }}.iam.gserviceaccount.com"
+#            else
+#              echo "cert-manager already installed"
+#            fi
+             helm repo add jetstack https://charts.jetstack.io --force-update
+             helm install \
+               cert-manager jetstack/cert-manager \
+               --namespace cert-manager \
+               --create-namespace \
+               --version v1.15.3 \
+               --set crds.enabled=true
+               --set serviceAccount.name=cert-manager-cas-issuer-sa \
+               --set serviceAccount.annotations."iam\.gke\.io/gcp-service-account"="cert-manager-cas-issuer-sa@${{ github.event.inputs.project_id }}.iam.gserviceaccount.com"
+                 
+            kubectl get serviceaccount -n cert-manager
 
-      - name: Set up Terraform
-        uses: hashicorp/setup-terraform@v3
+        - name: Install Google CAS Issuer if not present
+          run: |
+#            if ! helm status cas-issuer -n cert-manager >/dev/null 2>&1; then
+#              echo "CAS Issuer not found. Installing..."
+#
+#              # Clone the chart repo
+#              https://github.com/cert-manager/google-cas-issuer.git
+#
+#              # Move chart to working dir
+#              mv deploy/charts/google-cas-issuer ./cas-issuer-chart
+#
+#              # Install the CAS Issuer chart
+#              helm upgrade --install cas-issuer ./cas-issuer-chart \
+#                --namespace cert-manager \
+#                --create-namespace \
+#                --set crds.enabled=true \
+#                --set image.repository=quay.io/jetstack/cert-manager-google-cas-issuer \
+#                --set image.tag=v0.9.0 \
+#                --set serviceAccount.annotations."iam\.gke\.io/gcp-service-account"="cert-manager-cas-issuer-sa@${{ github.event.inputs.project_id }}.iam.gserviceaccount.com"
+#            else
+#              echo "Google CAS Issuer already installed"
+#            fi
+            helm repo add jetstack https://charts.jetstack.io --force-update
+            helm install \
+              google-cas-issuer jetstack/cert-manager-google-cas-issuer \
+              --namespace cert-manager \
+              --version v0.9.0
 
-      - name: Terraform Init
-        run: |
-          pwd
-          ls -trl 
-          terraform init -input=false  
+        - name: Install Istio
+          run: |
+            
+            # Install Istio if not exists
+            if ! helm status istiod -n istio-system >/dev/null 2>&1; then
+            helm upgrade --install istio-base istio/base \
+              --namespace istio-system \
+              --create-namespace \
+              --version 1.18.0
+  
+            helm upgrade --install istiod istio/istiod \
+              --namespace istio-system \
+              --version 1.18.0 \
+              --wait  --timeout 10m
+  
+            helm upgrade --install istio-ingressgateway istio/gateway \
+              --namespace istio-system \
+              --version 1.18.0 \
+              --set service.type=LoadBalancer
+            else
+              echo "Isto already installed"
+            fi
 
-      - name: Terraform Plan
-        run: terraform plan -var="project_id=${{ secrets.gcp_project_id }}" -var="region=${{ github.event.inputs.region }}" -out=solution_terraform
+        - name: Deploy Helm chart
+          run: |
+            pwd
+            cd $GITHUB_WORKSPACE
+            pwd
+            
+            helm dependency build ./solution_helm
 
+            helm upgrade --install istio-cas-ingress ${{ env.HELM_CHART_DIR }} \
+              --namespace default \
+              --create-namespace \
+              --set casIssuer.projectId=${{ github.event.inputs.project_id }} \
+              --set casIssuer.location=${{ github.event.inputs.region }} \
+              --set casIssuer.caPool=${{ env.CA_POOL_NAME }} \
+              --set casIssuer.signerName="projects/${{ github.event.inputs.project_id }}/locations/${{ github.event.inputs.region }}/caPools/${{ env.CA_POOL_NAME }}/certificateAuthorities/root-ca" \
+              --set serviceAccount.annotations."iam\.gke\.io/gcp-service-account"="cert-manager-cas-issuer-sa@${{ github.event.inputs.project_id }}.iam.gserviceaccount.com" \
+              --wait
 
-      - name: Terraform Apply
-        env:
-          TF_LOG: DEBUG
-          TF_LOG_PATH: terraform-debug.log
-        run: terraform apply -auto-approve -input=false -var="project_id=${{ secrets.gcp_project_id }}" -var="region=${{ github.event.inputs.region }}" solution_terraform
-
-
-      - name: Get Terraform outputs
-        id: terraform
-        run: |
-          echo "CA_POOL_NAME=$(terraform output -raw ca_pool_name)" >> $GITHUB_OUTPUT
-          echo "CLUSTER_NAME=$(terraform output -raw cluster_name)" >> $GITHUB_OUTPUT
-          echo "CLUSTER_ENDPOINT=$(terraform output -raw cluster_endpoint)" >> $GITHUB_OUTPUT
-
-      - name: Save outputs
-        run: |
-          echo "CA_POOL_NAME=${{ steps.terraform.outputs.CA_POOL_NAME }}" >> $GITHUB_ENV
-          echo "CLUSTER_NAME=${{ steps.terraform.outputs.CLUSTER_NAME }}" >> $GITHUB_ENV
-          echo "CLUSTER_ENDPOINT=${{ steps.terraform.outputs.CLUSTER_ENDPOINT }}" >> $GITHUB_ENV
-
-  deploy-application:
-    name: Deploy Application
-    needs: deploy-infrastructure
-    runs-on: ubuntu-latest
-    permissions:
-      contents: 'read'
-      id-token: 'write'
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-
-      - name: Authenticate to Google Cloud
-        id: auth
-        uses: google-github-actions/auth@v1
-        with:
-          workload_identity_provider: 'projects/${{ github.event.inputs.project_id }}/locations/global/workloadIdentityPools/github-pool/providers/github-provider'
-          service_account: 'helm-sa@${{ github.event.inputs.project_id }}.iam.gserviceaccount.com'
-
-      - name: Set up Cloud SDK
-        uses: google-github-actions/setup-gcloud@v1
-
-      - name: Configure kubectl
-        run: |
-          gcloud container clusters get-credentials ${{ env.CLUSTER_NAME }} \
-            --region ${{ github.event.inputs.region }} \
-            --project ${{ github.event.inputs.project_id }}
-
-      - name: Set up Helm
-        uses: azure/setup-helm@v3
-        with:
-          version: 'v3.12.0'
-
-      - name: Install dependencies
-        run: |
-          helm repo add jetstack https://charts.jetstack.io
-          helm repo add istio https://istio-release.storage.googleapis.com/charts
-          helm repo update
-          
-          # Install cert-manager if not exists
-          helm upgrade --install cert-manager jetstack/cert-manager \
-            --namespace cert-manager \
-            --create-namespace \
-            --version v1.12.0 \
-            --set installCRDs=true \
-            --set serviceAccount.annotations."iam\.gke\.io/gcp-service-account"="cert-manager-cas-issuer-sa@${{ github.event.inputs.project_id }}.iam.gserviceaccount.com"
-          
-          # Install Istio if not exists
-          helm upgrade --install istio-base istio/base \
-            --namespace istio-system \
-            --create-namespace \
-            --version 1.18.0
-          
-          helm upgrade --install istiod istio/istiod \
-            --namespace istio-system \
-            --version 1.18.0 \
-            --wait
-          
-          helm upgrade --install istio-ingressgateway istio/gateway \
-            --namespace istio-system \
-            --version 1.18.0 \
-            --set service.type=LoadBalancer
-
-      - name: Deploy Helm chart
-        run: |
-          helm upgrade --install istio-cas-ingress ${{ env.HELM_CHART_DIR }} \
-            --namespace default \
-            --create-namespace \
-            --set casIssuer.projectId=${{ github.event.inputs.project_id }} \
-            --set casIssuer.location=${{ github.event.inputs.region }} \
-            --set casIssuer.caPool=${{ env.CA_POOL_NAME }} \
-            --set ingress.hostname=${{ github.event.inputs.hostname }} \
-            --wait
-
-      - name: Verify resources
-        run: |
-          kubectl get clusterissuer
-          kubectl get certificate
-          kubectl get secret ${{ github.event.inputs.hostname }}-tls
-          kubectl get gateway
-          kubectl get virtualservice
+        - name: Verify resources
+          run: |
+            kubectl get googlecasclusterissuers -A
+            kubectl get certificate
+            kubectl get gateway -n istio-system
+            kubectl get virtualservice -n istio-system
+            sleep 60
+            kubectl get secret myapp-ingress-tls -n istio-system
