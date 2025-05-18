@@ -7,7 +7,7 @@
           required: true
         region:
           description: 'GCP Region'
-          default: 'us-central1'
+          default: 'europe-west1'
 
   env:
     CLUSTER_NAME: istio-cas-demo
