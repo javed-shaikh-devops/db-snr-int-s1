@@ -109,15 +109,14 @@ jobs:
           
           # Install cert-manager if not exists
            helm repo add jetstack https://charts.jetstack.io --force-update
-           helm install \
-             cert-manager jetstack/cert-manager \
-               --namespace cert-manager \
-               --create-namespace \
-               --version v1.15.3 \
-               --set crds.enabled=true \
-               --set serviceAccount.name=cert-manager-cas-issuer-sa \
-               --set serviceAccount.annotations."iam\.gke\.io/gcp-service-account"="cert-manager-cas-issuer-sa@${{ github.event.inputs.project_id }}.iam.gserviceaccount.com"
-                 
+           helm install cert-manager jetstack/cert-manager \
+             --namespace cert-manager \
+             --create-namespace \
+             --version v1.15.3 \
+             --set crds.enabled=true \
+             --set serviceAccount.name=cert-manager-cas-issuer-sa \
+             --set serviceAccount.annotations."iam\.gke\.io/gcp-service-account"="cert-manager-cas-issuer-sa@${{ github.event.inputs.project_id }}.iam.gserviceaccount.com"
+               
 
            kubectl get serviceaccount -n cert-manager
 
@@ -125,10 +124,9 @@ jobs:
         run: |
                
           helm repo add jetstack https://charts.jetstack.io --force-update
-          helm install \
-            google-cas-issuer jetstack/cert-manager-google-cas-issuer \
-              --namespace cert-manager \
-              --version v0.9.0
+          helm install google-cas-issuer jetstack/cert-manager-google-cas-issuer \
+            --namespace cert-manager \
+            --version v0.9.0
 
       - name: Install Istio
         run: |
