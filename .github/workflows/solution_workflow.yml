@@ -114,6 +114,68 @@ jobs:
              --namespace cert-manager \
              --create-namespace \
              --version v1.15.3 \
-             --set crds.enabled=true
+             --set crds.enabled=true \
              --set serviceAccount.name=cert-manager-cas-issuer-sa \
              --set serviceAccount.annotations."iam\.gke\.io/gcp-service-account"="cert-manager-cas-issuer-sa@${{ github.event.inputs.project_id }}.iam.gserviceaccount.com"
+               
+
+           kubectl get serviceaccount -n cert-manager
+
+      - name: Install Google CAS Issuer if not present
+        run: |
+               
+          helm repo add jetstack https://charts.jetstack.io --force-update
+          helm install \
+            google-cas-issuer jetstack/cert-manager-google-cas-issuer \
+            --namespace cert-manager \
+            --version v0.9.0
+
+      - name: Install Istio
+        run: |
+          
+          # Install Istio if not exists
+          if ! helm status istiod -n istio-system >/dev/null 2>&1; then
+          helm upgrade --install istio-base istio/base \
+            --namespace istio-system \
+            --create-namespace \
+            --version 1.18.0
+
+          helm upgrade --install istiod istio/istiod \
+            --namespace istio-system \
+            --version 1.18.0 \
+            --wait  --timeout 10m
+
+          helm upgrade --install istio-ingressgateway istio/gateway \
+            --namespace istio-system \
+            --version 1.18.0 \
+            --set service.type=LoadBalancer
+          else
+            echo "Isto already installed"
+          fi
+
+      - name: Deploy Helm chart
+        run: |
+          pwd
+          cd $GITHUB_WORKSPACE
+          pwd
+          
+          helm dependency build ./solution_helm
+
+          helm upgrade --install istio-cas-ingress ${{ env.HELM_CHART_DIR }} \
+            --namespace default \
+            --create-namespace \
+            --set casIssuer.projectId=${{ github.event.inputs.project_id }} \
+            --set casIssuer.location=${{ github.event.inputs.region }} \
+            --set casIssuer.caPool=${{ env.CA_POOL_NAME }} \
+            --set casIssuer.signerName="projects/${{ github.event.inputs.project_id }}/locations/${{ github.event.inputs.region }}/caPools/${{ env.CA_POOL_NAME }}/certificateAuthorities/root-ca" \
+            --set serviceAccount.annotations."iam\.gke\.io/gcp-service-account"="cert-manager-cas-issuer-sa@${{ github.event.inputs.project_id }}.iam.gserviceaccount.com" \
+            --wait
+
+      - name: Verify resources
+        run: |
+          kubectl get googlecasclusterissuers -A
+          kubectl get certificate
+          kubectl get gateway -n istio-system
+          kubectl get virtualservice -n istio-system
+          sleep 60
+          kubectl get secret myapp-ingress-tls -n istio-system
