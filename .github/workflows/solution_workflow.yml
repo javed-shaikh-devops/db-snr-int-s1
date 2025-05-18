@@ -158,7 +158,6 @@ jobs:
             --set casIssuer.project=${{ github.event.inputs.project_id }} \
             --set casIssuer.location=${{ github.event.inputs.region }} \
             --set casIssuer.caPoolId=${{ env.CA_POOL_NAME }} \
-#            --set casIssuer.signerName="projects/${{ github.event.inputs.project_id }}/locations/${{ github.event.inputs.region }}/caPools/${{ env.CA_POOL_NAME }}/certificateAuthorities/root-ca" \
             --set serviceAccount.annotations."iam\.gke\.io/gcp-service-account"="cert-manager-cas-issuer-sa@${{ github.event.inputs.project_id }}.iam.gserviceaccount.com" \
             --wait
 
