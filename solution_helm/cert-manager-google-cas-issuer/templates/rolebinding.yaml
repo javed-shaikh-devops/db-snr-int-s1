@@ -13,3 +13,4 @@ subjects:
 - kind: ServiceAccount
   name: {{ include "cert-manager-google-cas-issuer.name" . }}
   namespace: {{ .Release.Namespace }}
+

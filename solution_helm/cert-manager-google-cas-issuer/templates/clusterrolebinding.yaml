@@ -27,3 +27,4 @@ roleRef:
 subjects:
 {{ .Values.app.approval.subjects | toYaml | indent 2}}
 {{- end }}
+

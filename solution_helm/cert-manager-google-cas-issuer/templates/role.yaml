@@ -13,3 +13,4 @@ rules:
   resources: ["leases"]
   verbs: ["get", "update"]
   resourceNames: ["cm-google-cas-issuer"]
+
