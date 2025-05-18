@@ -1,14 +1,28 @@
-apiVersion: cert-manager.io/v1
-kind: ClusterIssuer
+apiVersion: cas-issuer.jetstack.io/v1beta1
+kind: GoogleCASIssuer
 metadata:
-  name: google-cas-issuer
+  name: my-googlecas-issuer
+  namespace: cert-manager
 spec:
-  googleCAS:
-    project: "db-demo-int"
-    location: "europe-west1"
-    caPoolId: "db-ca-pool5"
-#    signer: "projects/db-demo-int/locations/europe-west1/caPools/db-ca-pool5"
-    workloadIdentity:
-      serviceAccountRef:
-        name: "cert-manager-cas-issuer-sa"
-        namespace: "cert-manager"
+  project: "db-demo-int"
+  location: "europe-west1"
+  caPoolId: "db-ca-pool8"
+#    signer: "projects/db-demo-int/locations/europe-west1/caPools/db-ca-pool8"
+  workloadIdentity:
+    serviceAccountRef:
+      name: "cert-manager-cas-issuer-sa"
+      namespace: "cert-manager"
+
+---
+apiVersion: cas-issuer.jetstack.io/v1beta1
+kind: GoogleCASClusterIssuer
+metadata:
+  name: my-googlecas-clusterissuer
+spec:
+  project: "db-demo-int"
+  location: "europe-west1"
+  caPoolId: "db-ca-pool8"
+  workloadIdentity:
+    serviceAccountRef:
+      name: "cert-manager-cas-issuer-sa"
+      namespace: "cert-manager"
