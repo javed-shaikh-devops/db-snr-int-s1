@@ -113,7 +113,7 @@
 
         - name: Configure Helm Repo's
           run: |
-            helm repo add jetstack https://charts.jetstack.io
+            
             helm repo add istio https://istio-release.storage.googleapis.com/charts
             helm repo update
 
@@ -121,41 +121,58 @@
           run: |
             
             # Install cert-manager if not exists
-            if ! helm status cert-manager -n cert-manager >/dev/null 2>&1; then
-            helm upgrade --install cert-manager jetstack/cert-manager \
-              --namespace cert-manager \
-              --create-namespace \
-              --version v1.16.0 \
-              --set installCRDs=true \
-              --set serviceAccount.name=cert-manager-cas-issuer-sa \
-              --set serviceAccount.annotations."iam\.gke\.io/gcp-service-account"="cert-manager-cas-issuer-sa@${{ github.event.inputs.project_id }}.iam.gserviceaccount.com"
-            else
-              echo "cert-manager already installed"
-            fi
+#            if ! helm status cert-manager -n cert-manager >/dev/null 2>&1; then
+#
+#            helm repo add jetstack https://charts.jetstack.io  --force-update
+#            helm upgrade --install cert-manager jetstack/cert-manager \
+#              --namespace cert-manager \
+#              --create-namespace \
+#              --version v1.15.3 \
+#              --set installCRDs=true \
+#              --set serviceAccount.name=cert-manager-cas-issuer-sa \
+#              --set serviceAccount.annotations."iam\.gke\.io/gcp-service-account"="cert-manager-cas-issuer-sa@${{ github.event.inputs.project_id }}.iam.gserviceaccount.com"
+#            else
+#              echo "cert-manager already installed"
+#            fi
+             helm repo add jetstack https://charts.jetstack.io --force-update
+             helm install \
+               cert-manager jetstack/cert-manager \
+               --namespace cert-manager \
+               --create-namespace \
+               --version v1.15.3 \
+               --set crds.enabled=true
+               --set serviceAccount.name=cert-manager-cas-issuer-sa \
+               --set serviceAccount.annotations."iam\.gke\.io/gcp-service-account"="cert-manager-cas-issuer-sa@${{ github.event.inputs.project_id }}.iam.gserviceaccount.com"
+                 
             kubectl get serviceaccount -n cert-manager
 
         - name: Install Google CAS Issuer if not present
           run: |
-            if ! helm status cas-issuer -n cert-manager >/dev/null 2>&1; then
-              echo "CAS Issuer not found. Installing..."
-
-              # Clone the chart repo
-              https://github.com/cert-manager/google-cas-issuer.git
-
-              # Move chart to working dir 
-              mv deploy/charts/google-cas-issuer ./cas-issuer-chart
-
-              # Install the CAS Issuer chart
-              helm upgrade --install cas-issuer ./cas-issuer-chart \
-                --namespace cert-manager \
-                --create-namespace \
-                --set crds.enabled=true \
-                --set image.repository=quay.io/jetstack/cert-manager-google-cas-issuer \
-                --set image.tag=v0.9.0 \
-                --set serviceAccount.annotations."iam\.gke\.io/gcp-service-account"="cert-manager-cas-issuer-sa@${{ github.event.inputs.project_id }}.iam.gserviceaccount.com"
-            else
-              echo "Google CAS Issuer already installed"
-            fi
+#            if ! helm status cas-issuer -n cert-manager >/dev/null 2>&1; then
+#              echo "CAS Issuer not found. Installing..."
+#
+#              # Clone the chart repo
+#              https://github.com/cert-manager/google-cas-issuer.git
+#
+#              # Move chart to working dir
+#              mv deploy/charts/google-cas-issuer ./cas-issuer-chart
+#
+#              # Install the CAS Issuer chart
+#              helm upgrade --install cas-issuer ./cas-issuer-chart \
+#                --namespace cert-manager \
+#                --create-namespace \
+#                --set crds.enabled=true \
+#                --set image.repository=quay.io/jetstack/cert-manager-google-cas-issuer \
+#                --set image.tag=v0.9.0 \
+#                --set serviceAccount.annotations."iam\.gke\.io/gcp-service-account"="cert-manager-cas-issuer-sa@${{ github.event.inputs.project_id }}.iam.gserviceaccount.com"
+#            else
+#              echo "Google CAS Issuer already installed"
+#            fi
+            helm repo add jetstack https://charts.jetstack.io --force-update
+            helm install \
+              google-cas-issuer jetstack/cert-manager-google-cas-issuer \
+              --namespace cert-manager \
+              --version v0.9.0
 
         - name: Install Istio
           run: |

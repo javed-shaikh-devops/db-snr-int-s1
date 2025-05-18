@@ -6,8 +6,8 @@ spec:
   googleCAS:
     project: "db-demo-int"
     location: "us-central1"
-    caPool: "db-ca-pool5"
-    signer: "projects/db-demo-int/locations/us-central1/caPools/db-ca-pool5"
+    caPoolId: "db-ca-pool5"
+#    signer: "projects/db-demo-int/locations/us-central1/caPools/db-ca-pool5"
     workloadIdentity:
       serviceAccountRef:
         name: "cert-manager-cas-issuer-sa"
