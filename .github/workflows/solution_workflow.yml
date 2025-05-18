@@ -1,4 +1,4 @@
-  name: Deploy Istio Ingress with CAS
+  name: Deploy Istio Ingress with Google CAS
   on:
     workflow_dispatch:
       inputs:
