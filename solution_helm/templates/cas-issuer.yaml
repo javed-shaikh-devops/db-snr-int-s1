@@ -5,9 +5,9 @@ metadata:
   namespace: cert-manager
 spec:
   project: "db-demo-int"
-  location: "us-central1"
-  caPoolId: "db-ca-pool7"
-#    signer: "projects/db-demo-int/locations/us-central1/caPools/db-ca-pool7"
+  location: "europe-west1"
+  caPoolId: "db-ca-pool8"
+#    signer: "projects/db-demo-int/locations/europe-west1/caPools/db-ca-pool8"
   workloadIdentity:
     serviceAccountRef:
       name: "cert-manager-cas-issuer-sa"
@@ -20,8 +20,8 @@ metadata:
   name: my-googlecas-clusterissuer
 spec:
   project: "db-demo-int"
-  location: "us-central1"
-  caPoolId: "db-ca-pool7"
+  location: "europe-west1"
+  caPoolId: "db-ca-pool8"
   workloadIdentity:
     serviceAccountRef:
       name: "cert-manager-cas-issuer-sa"
