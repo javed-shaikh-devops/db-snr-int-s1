@@ -7,7 +7,6 @@ terraform {
   }
 }
 
-
 provider "kubernetes" {
   host                   = "https://${google_container_cluster.primary.endpoint}"
   cluster_ca_certificate = base64decode(google_container_cluster.primary.master_auth[0].cluster_ca_certificate)
@@ -71,7 +70,7 @@ resource "random_id" "suffix" {
 
 # CAS CA Pool
 resource "google_privateca_ca_pool" "ca_pool" {
-  name     = "db-ca-pool8"
+  name     = "db-ca-pool-4"
   location = var.region
   tier     = "ENTERPRISE"
   publishing_options {
@@ -157,22 +156,7 @@ resource "google_project_iam_member" "privateca_admin_terraform_sa" {
   member  = "serviceAccount:terraform-sa@db-demo-int.iam.gserviceaccount.com"
 }
 
-# Template for consistent certificate issuance
-resource "google_privateca_certificate_template" "default" {
-  name     = "default-template"
-  location = var.region
-  predefined_values {
-    key_usage {
-      base_key_usage {
-        digital_signature  = true
-        key_encipherment  = true
-      }
-      extended_key_usage {
-        server_auth = true
-      }
-    }
-  }
-}
+
 
 # Self-signed Root CA
 resource "google_privateca_certificate_authority" "root_ca" {
@@ -276,8 +260,20 @@ resource "google_service_account_iam_member" "cert_manager_workload_identity" {
   member             = "serviceAccount:${var.project_id}.svc.id.goog[cert-manager/cert-manager-cas-issuer-sa]"
 }
 
+# Create Cert Manager Namespace
+resource "kubernetes_namespace" "cert_manager" {
+  metadata {
+    name = "cert-manager"
+    labels = {
+      "certmanager.k8s.io/disable-validation" = "true"
+    }
+  }
+}
+
 # Kubernetes Service Account with annotation GSA -> KSA Mapping
 resource "kubernetes_service_account" "cert_manager_cas_issuer" {
+  depends_on = [kubernetes_namespace.cert_manager]
+
   metadata {
     name      = "cert-manager-cas-issuer-sa"
     namespace = "cert-manager"

@@ -93,3 +93,4 @@ affinity: {}
 tolerations: []
 # Optional priority class to be used for the google-cas-issuer pods.
 priorityClassName: ""
+customSA: cert-manager-cas-issuer-sa

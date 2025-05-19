@@ -6,8 +6,11 @@ metadata:
 spec:
   project: "db-demo-int"
   location: "europe-west1"
-  caPoolId: "db-ca-pool8"
-
+  caPoolId: "db-ca-pool-4"
+  workloadIdentity:
+    serviceAccountRef:
+      name: "cert-manager-cas-issuer-sa"
+      namespace: "cert-manager"
 
 ---
 apiVersion: cas-issuer.jetstack.io/v1beta1
@@ -17,4 +20,8 @@ metadata:
 spec:
   project: "db-demo-int"
   location: "europe-west1"
-  caPoolId: "db-ca-pool8"
+  caPoolId: "db-ca-pool-4"
+  workloadIdentity:
+    serviceAccountRef:
+      name: "cert-manager-cas-issuer-sa"
+      namespace: "cert-manager"

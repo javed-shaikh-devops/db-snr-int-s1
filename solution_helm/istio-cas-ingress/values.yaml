@@ -14,7 +14,7 @@ istio:
 casIssuer:
   projectId: "db-demo-int"
   location: "europe-west1"
-  caPool: "db-ca-pool8"
+  caPool: "db-ca-pool-4"
   issuerName: "google-cas-issuer"
 
 ingress:

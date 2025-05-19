@@ -114,18 +114,18 @@ jobs:
 
       - name: Install Google CAS Issuer
         run: |
-          
-                    
-          helm install google-cas-issuer ./cert-manager-google-cas-issuer \
+
+
+          helm install google-cas-issuer ./solution_helm/cert-manager-google-cas-issuer \
             --namespace cert-manager \
             --create-namespace \
             --version v0.9.0 \
             --set crds.enabled=true \
-            
+                           
 
       - name: Install Istio
         run: |
-          
+
           # Install Istio if not exists
           if ! helm status istiod -n istio-system >/dev/null 2>&1; then
           helm upgrade --install istio-base istio/base \
@@ -146,12 +146,17 @@ jobs:
             echo "Isto already installed"
           fi
 
+          kubectl apply -f ./solution_helm/istio-cas-ingress/templates/cert-manager-cas-issuer-rbac.yaml
+          kubectl apply -f ./solution_helm/istio-cas-ingress/templates/cas-issuer.yaml
+          sleep 10
+          kubectl rollout restart deployment -n cert-manager cert-manager-google-cas-issuer
+
       - name: Deploy Helm chart
         run: |
           pwd
           cd $GITHUB_WORKSPACE
           pwd
-          
+
           helm dependency build ./solution_helm
 
           helm upgrade --install istio-cas-ingress ${{ env.HELM_CHART_DIR }} \

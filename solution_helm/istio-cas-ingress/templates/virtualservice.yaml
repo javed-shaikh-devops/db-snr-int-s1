@@ -1,16 +1,16 @@
 apiVersion: networking.istio.io/v1alpha3
 kind: VirtualService
 metadata:
-  name: example-com-vs
-  namespace: {{ .Values.ingress.namespace }}
+  name: test-vs
+  namespace: default
 spec:
   hosts:
-    - {{ .Values.ingress.hostname }}
+    - "example.com"  # Same as Gateway host
   gateways:
-    - {{ .Values.ingress.namespace }}/example-com-gateway
+    - istio-system/tls-gateway  # Namespace/GatewayName
   http:
-      - route:
+    - route:
         - destination:
-            host: myapp-service.default.svc.cluster.local
+            host: test-service.default.svc.cluster.local
             port:
               number: 80
