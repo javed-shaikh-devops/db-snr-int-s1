@@ -9,13 +9,15 @@ metadata:
     meta.helm.sh/release-name: {{ .Release.Name }}
     meta.helm.sh/release-namespace: {{ .Release.Namespace }}
 rules:
-  # CAS Issuer permissions
-  - apiGroups: [ "cas-issuer.jetstack.io" ]
+  # Enhanced CAS Issuer permissions
+  - apiGroups: ["cas-issuer.jetstack.io"]
     resources:
       - "googlecasissuers"
       - "googlecasissuers/status"
+      - "googlecasissuers/approval"
       - "googlecasclusterissuers"
       - "googlecasclusterissuers/status"
+      - "googlecasclusterissuers/approval"
     verbs:
       - get
       - list
@@ -23,15 +25,19 @@ rules:
       - update
       - patch
       - create
+      - approve
 
-  # Cert-manager core permissions
-  - apiGroups: [ "cert-manager.io" ]
+  # Complete Cert-manager permissions
+  - apiGroups: ["cert-manager.io"]
     resources:
       - "certificaterequests"
       - "certificaterequests/status"
+      - "certificaterequests/approval"
       - "certificaterequests/finalizers"
       - "certificates"
       - "certificates/status"
+      - "signers"
+      - "signers/approval"
     verbs:
       - get
       - list
@@ -40,20 +46,13 @@ rules:
       - patch
       - create
       - delete
-
-  # Signer approval permissions
-  - apiGroups: [ "cert-manager.io" ]
-    resources:
-      - "signers"
+      - approve
     resourceNames:
       - "googlecasissuers.cas-issuer.jetstack.io/*"
       - "googlecasclusterissuers.cas-issuer.jetstack.io/*"
-    verbs:
-      - approve
-      - update
 
   # Secrets management
-  - apiGroups: [ "" ]
+  - apiGroups: [""]
     resources:
       - "secrets"
     verbs:
@@ -65,7 +64,7 @@ rules:
       - delete
 
   # Certificate signing requests
-  - apiGroups: [ "certificates.k8s.io" ]
+  - apiGroups: ["certificates.k8s.io"]
     resources:
       - "certificatesigningrequests"
       - "certificatesigningrequests/approval"
@@ -79,16 +78,24 @@ rules:
       - patch
 
   # Events
-  - apiGroups: [ "" ]
-    resources: [ "events" ]
-    verbs: [ "create", "patch", "update" ]
+  - apiGroups: [""]
+    resources: ["events"]
+    verbs: ["create", "patch", "update"]
 
   # Leader election leases
-  - apiGroups: [ "coordination.k8s.io" ]
-    resources: [ "leases" ]
-    verbs: [ "get", "create", "update", "patch" ]
+  - apiGroups: ["coordination.k8s.io"]
+    resources: ["leases"]
+    verbs: ["get", "create", "update", "patch"]
 
-  # Additional monitoring permissions
-  - apiGroups: [ "" ]
-    resources: [ "pods", "services", "endpoints" ]
-    verbs: [ "get", "list", "watch" ]
+  # Monitoring permissions
+  - apiGroups: [""]
+    resources: ["pods", "services", "endpoints"]
+    verbs: ["get", "list", "watch"]
+
+  # Webhook permissions
+  - apiGroups: ["admission.cert-manager.io"]
+    resources:
+      - "certificaterequests/status"
+    verbs:
+      - update
+      - patch
