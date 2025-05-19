@@ -1,24 +1,24 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ .Values.myapp.name }}
-  namespace: {{ .Values.myapp.namespace }}
+  name: {{ .Values.app.name }}
+  namespace: default
   labels:
-    app: {{ .Values.myapp.name }}
+    app: {{ .Values.app.name }}
 spec:
-  replicas: {{ .Values.myapp.replicas }}
+  replicas: {{ .Values.app.replicaCount }}
   selector:
     matchLabels:
-      app: {{ .Values.myapp.name }}
+      app: {{ .Values.app.name }}
   template:
     metadata:
       labels:
-        app: {{ .Values.myapp.name }}
+        app: {{ .Values.app.name }}
     spec:
       containers:
-        - name: {{ .Values.myapp.name }}
-          image: {{ .Values.myapp.image }}
-          args: {{- toYaml .Values.myapp.args | nindent 12 }}
+        - name: {{ .Values.app.name }}
+          image: {{ .Values.app.image }}
+          args:
+            - -text={{ .Values.app.text }}
           ports:
-            - containerPort: {{ .Values.myapp.containerPort }}
-
+            - containerPort: {{ .Values.app.port }}

@@ -68,6 +68,7 @@ jobs:
           echo "CA_POOL_NAME=$(terraform output -raw ca_pool_name)" >> $GITHUB_OUTPUT
           echo "CLUSTER_NAME=$(terraform output -raw cluster_name)" >> $GITHUB_OUTPUT
           echo "CLUSTER_ENDPOINT=$(terraform output -raw cluster_endpoint)" >> $GITHUB_OUTPUT
+          echo "SERVICE_ACCOUNT_NAME=$(terraform output -raw cert_manager_sa_email)" >> $GITHUB_OUTPUT
 
       - name: Save outputs
         working-directory: ./solution_terraform
@@ -75,6 +76,8 @@ jobs:
           echo "CA_POOL_NAME=${{ steps.terraform.outputs.CA_POOL_NAME }}" >> $GITHUB_ENV
           echo "CLUSTER_NAME=${{ steps.terraform.outputs.CLUSTER_NAME }}" >> $GITHUB_ENV
           echo "CLUSTER_ENDPOINT=${{ steps.terraform.outputs.CLUSTER_ENDPOINT }}" >> $GITHUB_ENV
+          echo "SERVICE_ACCOUNT_NAME=$(terraform output -raw cert_manager_sa_email)" >> $GITHUB_ENV
+          
 
       - name: Set up Cloud SDK
         uses: google-github-actions/setup-gcloud@v2
@@ -114,14 +117,10 @@ jobs:
 
       - name: Install Google CAS Issuer
         run: |
-
-
-          helm install google-cas-issuer ./solution_helm/cert-manager-google-cas-issuer \
+          helm upgrade --install google-cas-issuer jetstack/cert-manager-google-cas-issuer \
             --namespace cert-manager \
-            --create-namespace \
             --version v0.9.0 \
-            --set crds.enabled=true \
-                           
+            --set crds.enabled=true
 
       - name: Install Istio
         run: |
@@ -142,9 +141,16 @@ jobs:
             --namespace istio-system \
             --version 1.18.0 \
             --set service.type=LoadBalancer
+          
           else
             echo "Isto already installed"
           fi
+
+      - name: Apply Rbac
+        run: |
+      
+          kubectl patch deployment -n cert-manager cert-manager-google-cas-issuer \
+            --patch "{\"spec\": {\"template\": {\"spec\": {\"serviceAccountName\": \"${SERVICE_ACCOUNT_NAME}\"}}}}"
 
           kubectl apply -f ./solution_helm/istio-cas-ingress/templates/cert-manager-cas-issuer-rbac.yaml
           kubectl apply -f ./solution_helm/istio-cas-ingress/templates/cas-issuer.yaml
@@ -157,16 +163,14 @@ jobs:
           cd $GITHUB_WORKSPACE
           pwd
 
-          helm dependency build ./solution_helm
+          helm dependency build ./solution_helm/istio-cas-ingress/
 
           helm upgrade --install istio-cas-ingress ${{ env.HELM_CHART_DIR }} \
             --namespace default \
             --create-namespace \
             --set casIssuer.project=${{ github.event.inputs.project_id }} \
             --set casIssuer.location=${{ github.event.inputs.region }} \
-            --set casIssuer.caPoolId=${{ env.CA_POOL_NAME }} \
-            --set serviceAccount.annotations."iam\.gke\.io/gcp-service-account"="cert-manager-cas-issuer-sa@${{ github.event.inputs.project_id }}.iam.gserviceaccount.com" \
-            --wait
+            --set casIssuer.caPoolId=${{ env.CA_POOL_NAME }} 
 
       - name: Verify resources
         run: |

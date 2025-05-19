@@ -1,20 +1,19 @@
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
-  name: example-com-tls
+  name: {{ .Values.certificate.name }}
 spec:
-  secretName: example-cert-tls
-  duration: 2160h # 90d
-  renewBefore: 360h # 15d
+  secretName: {{ .Values.certificate.secretName }}
+  duration: {{ .Values.certificate.duration }}
+  renewBefore: {{ .Values.certificate.renewBefore }}
   issuerRef:
-    name: {{ .Values.casIssuer.issuerName }}
-    kind: GoogleCASClusterIssuer
-    group: cas-issuer.jetstack.io
-  commonName: {{ .Values.ingress.hostname }}
+    name: {{ .Values.certificate.issuerRef.name | default .Values.googleCAS.clusterIssuer.name }}
+    kind: {{ .Values.certificate.issuerRef.kind | default "GoogleCASClusterIssuer" }}
+    group: {{ .Values.certificate.issuerRef.group | default "cas-issuer.jetstack.io" }}
+  commonName: {{ .Values.certificate.commonName }}
   dnsNames:
-    - {{ .Values.ingress.hostname }}
+    {{- toYaml .Values.certificate.dnsNames | nindent 4 }}
   usages:
     - digital signature
     - key encipherment
     - server auth
-

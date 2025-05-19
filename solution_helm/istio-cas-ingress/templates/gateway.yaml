@@ -1,18 +1,18 @@
 apiVersion: networking.istio.io/v1alpha3
 kind: Gateway
 metadata:
-  name: tls-gateway
-  namespace: default  # Must be in same namespace as your ingressgateway
+  name: {{ .Values.gateway.name }}
+  namespace: default
 spec:
   selector:
     istio: ingressgateway
   servers:
     - port:
-        number: 443
+        number: {{ .Values.gateway.port }}
         name: https
         protocol: HTTPS
       tls:
         mode: SIMPLE
-        credentialName: example-cert-tls  # Must match your secret name
+        credentialName: {{ .Values.gateway.credentialName }}
       hosts:
-        - "example.com"  # Must match your certificate's DNS name
+        {{- toYaml .Values.gateway.hosts | nindent 8 }}

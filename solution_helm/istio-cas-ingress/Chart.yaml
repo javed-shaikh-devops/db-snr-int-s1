@@ -1,6 +1,7 @@
 apiVersion: v2
 name: istio-cas-ingress
-description: A Helm chart for Istio Ingress with CAS certificates
+description: A Helm chart for Istio ingress with Google CAS certificates
 version: 0.1.0
-appVersion: 1.0.0
-
+appVersion: "1.0"
+annotations:
+  rbac.authorization.k8s.io/v1: "true"

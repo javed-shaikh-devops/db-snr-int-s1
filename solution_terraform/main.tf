@@ -55,6 +55,8 @@ resource "google_project_iam_member" "privateca_roles" {
   for_each = toset([
     "roles/privateca.certificateRequester",
     "roles/cloudkms.signerVerifier",
+    "roles/privateca.certificateManager",
+    "roles/iam.serviceAccountTokenCreator",
     "roles/iam.serviceAccountUser"           # Required for Workload Identity
   ])
   project = var.project_id

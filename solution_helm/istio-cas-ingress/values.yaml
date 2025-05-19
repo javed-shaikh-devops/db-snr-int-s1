@@ -1,33 +1,52 @@
-cert-manager:
-  enabled: false # set to true only if you want to install it via this chart
-  installCRDs: true
-  serviceAccount:
-    annotations:
-      iam.gke.io/gcp-service-account: "cert-manager-cas-issuer-sa@${project_id}.iam.gserviceaccount.com"
-
-istio:
-  gateways:
-    istio-ingressgateway:
-      service:
-        type: LoadBalancer
-
-casIssuer:
-  projectId: "db-demo-int"
-  location: "europe-west1"
-  caPool: "db-ca-pool-4"
-  issuerName: "google-cas-issuer"
-
-ingress:
-  hostname: "example.com"
-  namespace: "istio-system"
-  secretName: "myapp-ingress-tls"
-
-myapp:
+# Application settings
+app:
   name: myapp
-  namespace: default
-  serviceName: myapp-service
-  replicas: 1
   image: hashicorp/http-echo
-  args:
-    - "-text=Hello from myapp-service"
-  containerPort: 5678
+  text: "Hello from myapp-service"
+  port: 5678
+  replicaCount: 1
+
+# Service settings
+service:
+  name: myapp-service
+  port: 80
+  targetPort: 5678
+
+# Certificate settings
+certificate:
+  name: example-com-tls
+  secretName: example-cert-tls
+  duration: 2160h # 90d
+  renewBefore: 360h # 15d
+  issuerRef:
+    name: my-googlecas-clusterissuer
+    kind: GoogleCASClusterIssuer
+    group: cas-issuer.jetstack.io
+  commonName: example.com
+  dnsNames:
+    - example.com
+
+# Gateway settings
+gateway:
+  name: tls-gateway
+  hosts:
+    - example.com
+  port: 443
+  credentialName: example-cert-tls
+
+# VirtualService settings
+virtualservice:
+  name: test-vs
+  hosts:
+    - example.com
+  gateway: tls-gateway
+
+# RBAC settings
+rbac:
+  clusterRole:
+    name: cert-manager-cas-issuer-permissions
+  clusterRoleBinding:
+    name: cert-manager-cas-issuer-binding
+    serviceAccount:
+      name: cert-manager-cas-issuer-sa
+      namespace: cert-manager

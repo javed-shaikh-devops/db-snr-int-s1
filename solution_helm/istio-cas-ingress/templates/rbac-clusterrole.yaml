@@ -1,8 +1,16 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: cert-manager-cas-issuer-permissions
+  name: {{ .Values.rbac.clusterRole.name }}
 rules:
+  # Google Cas Issuer
+  - apiGroups: [ "cas-issuer.jetstack.io" ]
+    resources:
+      - "googlecasissuers"
+    verbs:
+      - get
+      - list
+      - watch
   # Cert-manager core permissions
   - apiGroups: ["cert-manager.io"]
     resources:
@@ -24,13 +32,14 @@ rules:
       - "googlecasclusterissuers"
       - "googlecasclusterissuers/status"
       - "googlecasclusterissuers/approval"
+      - "googlecasissuers"
+      - "googlecasissuers/status"
     verbs:
       - get
       - list
       - watch
       - update
       - patch
-
   # Signer approval permissions
   - apiGroups: ["cert-manager.io"]
     resources:
@@ -70,17 +79,7 @@ rules:
       - update
       - patch
 
----
-
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRoleBinding
-metadata:
-  name: cert-manager-cas-issuer-binding
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
-  name: cert-manager-cas-issuer-permissions
-subjects:
-  - kind: ServiceAccount
-    name: cert-manager-cas-issuer-sa
-    namespace: cert-manager
+   # Events
+  - apiGroups: [ "" ]
+    resources: [ "events" ]
+    verbs: [ "create", "patch", "update" ]

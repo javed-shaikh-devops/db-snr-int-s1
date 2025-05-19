@@ -1,0 +1,9 @@
+apiVersion: cas-issuer.jetstack.io/v1beta1
+kind: GoogleCASIssuer
+metadata:
+  name: {{ .Values.googleCAS.issuer.name }}
+  namespace: {{ .Values.googleCAS.issuer.namespace }}
+spec:
+  project: "{{ .Values.googleCAS.issuer.project }}"
+  location: "{{ .Values.googleCAS.issuer.location }}"
+  caPoolId: "{{ .Values.googleCAS.issuer.caPoolId }}"
