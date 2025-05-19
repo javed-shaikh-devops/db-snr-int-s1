@@ -117,7 +117,7 @@ jobs:
 
       - name: Install Google CAS Issuer
         run: |
-          helm upgrade --install google-cas-issuer jetstack/cert-manager-google-cas-issuer \
+          helm upgrade --install google-cas-issuer ./solution_helm/cert-manager-google-cas-issuer \
             --namespace cert-manager \
             --version v0.9.0 \
             --set crds.enabled=true
@@ -149,9 +149,6 @@ jobs:
       - name: Apply Rbac
         run: |
       
-          kubectl patch deployment -n cert-manager cert-manager-google-cas-issuer \
-            --patch "{\"spec\": {\"template\": {\"spec\": {\"serviceAccountName\": \"${SERVICE_ACCOUNT_NAME}\"}}}}"
-
           kubectl apply -f ./solution_helm/istio-cas-ingress/templates/cert-manager-cas-issuer-rbac.yaml
           kubectl apply -f ./solution_helm/istio-cas-ingress/templates/cas-issuer.yaml
           sleep 10
@@ -163,12 +160,12 @@ jobs:
           cd $GITHUB_WORKSPACE
           pwd
 
-          helm dependency build ./solution_helm/istio-cas-ingress/
+          helm dependency build ./solution_helm/istio-cas-ingress
 
           helm upgrade --install istio-cas-ingress ${{ env.HELM_CHART_DIR }} \
             --namespace default \
             --create-namespace \
-            --set casIssuer.project=${{ github.event.inputs.project_id }} \
+            --set googleCAS.project=${{ github.event.inputs.project_id }} \
             --set casIssuer.location=${{ github.event.inputs.region }} \
             --set casIssuer.caPoolId=${{ env.CA_POOL_NAME }} 
 

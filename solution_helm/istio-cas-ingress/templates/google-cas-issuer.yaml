@@ -4,6 +4,6 @@ metadata:
   name: {{ .Values.googleCAS.issuer.name }}
   namespace: {{ .Values.googleCAS.issuer.namespace }}
 spec:
-  project: "{{ .Values.googleCAS.issuer.project }}"
-  location: "{{ .Values.googleCAS.issuer.location }}"
-  caPoolId: "{{ .Values.googleCAS.issuer.caPoolId }}"
+  project: "{{ .Values.googleCAS.project }}"
+  location: "{{ .Values.googleCAS.location }}"
+  caPoolId: "{{ .Values.googleCAS.caPoolId }}"

@@ -1,3 +1,9 @@
+# Glocal
+global:
+  project: ""
+  location: ""
+  caPoolId: ""
+
 # Application settings
 app:
   name: myapp
@@ -50,3 +56,10 @@ rbac:
     serviceAccount:
       name: cert-manager-cas-issuer-sa
       namespace: cert-manager
+
+googleCAS:
+  issuer:
+    name: "google-cas-issuer"
+    namespace: "cert-manager"
+  clusterIssuer:
+    name: "my-googlecas-clusterissuer"
