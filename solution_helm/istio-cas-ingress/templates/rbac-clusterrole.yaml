@@ -63,3 +63,18 @@ rules:
   - apiGroups: ["coordination.k8s.io"]
     resources: ["leases"]
     verbs: ["get", "create", "update", "patch"]
+
+  - apiGroups: [ "cert-manager.io" ]
+    resources: [ "signers" ]
+    resourceNames:
+      - "cas-issuer.jetstack.io/my-googlecas-clusterissuer"  # <--- very important
+    verbs: [ "approve" ]
+
+  - apiGroups: [ "admission.cert-manager.io" ]
+    resources:
+      - "certificaterequests/approval"  # <<< Add this
+      - "certificaterequests/status"
+    verbs:
+      - update
+      - patch
+      - approve
