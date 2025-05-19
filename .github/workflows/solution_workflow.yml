@@ -166,8 +166,8 @@ jobs:
             --namespace default \
             --create-namespace \
             --set googleCAS.project=${{ github.event.inputs.project_id }} \
-            --set casIssuer.location=${{ github.event.inputs.region }} \
-            --set casIssuer.caPoolId=${{ env.CA_POOL_NAME }} 
+            --set googleCAS.location=${{ github.event.inputs.region }} \
+            --set googleCAS.caPoolId=${{ env.CA_POOL_NAME }} 
 
       - name: Verify resources
         run: |

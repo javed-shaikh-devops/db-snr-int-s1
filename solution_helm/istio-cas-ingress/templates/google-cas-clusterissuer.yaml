@@ -2,6 +2,12 @@ apiVersion: cas-issuer.jetstack.io/v1beta1
 kind: GoogleCASClusterIssuer
 metadata:
   name: {{ .Values.googleCAS.clusterIssuer.name }}
+  labels:
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/instance: {{ .Release.Name }}
+  annotations:
+    meta.helm.sh/release-name: {{ .Release.Name }}
+    meta.helm.sh/release-namespace: {{ .Release.Namespace }}
 spec:
   project: "{{ .Values.googleCAS.project }}"
   location: "{{ .Values.googleCAS.location }}"

@@ -3,6 +3,12 @@ kind: GoogleCASIssuer
 metadata:
   name: {{ .Values.googleCAS.issuer.name }}
   namespace: {{ .Values.googleCAS.issuer.namespace }}
+  labels:
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/instance: {{ .Release.Name }}
+  annotations:
+    meta.helm.sh/release-name: {{ .Release.Name }}
+    meta.helm.sh/release-namespace: {{ .Release.Namespace }}
 spec:
   project: "{{ .Values.googleCAS.project }}"
   location: "{{ .Values.googleCAS.location }}"

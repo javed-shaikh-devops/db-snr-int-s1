@@ -272,15 +272,3 @@ resource "kubernetes_namespace" "cert_manager" {
   }
 }
 
-# Kubernetes Service Account with annotation GSA -> KSA Mapping
-resource "kubernetes_service_account" "cert_manager_cas_issuer" {
-  depends_on = [kubernetes_namespace.cert_manager]
-
-  metadata {
-    name      = "cert-manager-cas-issuer-sa"
-    namespace = "cert-manager"
-    annotations = {
-      "iam.gke.io/gcp-service-account" = google_service_account.cert-manager-cas-issuer-sa.email
-    }
-  }
-}
