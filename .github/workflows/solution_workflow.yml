@@ -160,8 +160,14 @@ jobs:
           cd $GITHUB_WORKSPACE
           pwd
 
+          
+          
+          kubectl annotate serviceaccount cert-manager-cas-issuer-sa \
+            -n cert-manager \
+            iam.gke.io/gcp-service-account=cert-manager-cas-issuer-sa@db-demo-int.iam.gserviceaccount.com
+          
           helm dependency build ./solution_helm/istio-cas-ingress
-
+          
           helm upgrade --install istio-cas-ingress ${{ env.HELM_CHART_DIR }} \
             --namespace default \
             --create-namespace \
