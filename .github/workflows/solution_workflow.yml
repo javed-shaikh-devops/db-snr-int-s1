@@ -7,7 +7,7 @@ on:
         required: true
       region:
         description: 'GCP Region'
-        default: 'europe-west1'
+        default: 'us-central1'
 
 
 env:
@@ -156,11 +156,8 @@ jobs:
 
       - name: Deploy Helm chart
         run: |
-          pwd
-          cd $GITHUB_WORKSPACE
-          pwd
-
           
+          cd $GITHUB_WORKSPACE
           
           kubectl annotate serviceaccount cert-manager-cas-issuer-sa \
             -n cert-manager \
