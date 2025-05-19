@@ -78,3 +78,24 @@ rules:
       - update
       - patch
       - approve
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: cert-manager-approve-googlecas
+rules:
+  - apiGroups: ["cert-manager.io"]
+    resources: ["signers"]
+    resourceNames:
+      - "cas-issuer.jetstack.io/my-googlecas-clusterissuer"  #
+    verbs: ["approve"]
+
+  - apiGroups: [ "admission.cert-manager.io" ]
+    resources:
+      - "certificaterequests/approval"  # <<< Add this
+      - "certificaterequests/status"
+    verbs:
+      - update
+      - patch
+      - approve
