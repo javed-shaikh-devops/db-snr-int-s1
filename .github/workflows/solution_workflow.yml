@@ -92,11 +92,11 @@ jobs:
         with:
           version: 'v3.12.0'
 
-      - name: Grant cluster-admin to cert-manager-cas-issuer-sa
-        run: |
-          kubectl create clusterrolebinding cert-manager-cas-issuer-admin-binding \
-            --clusterrole=cluster-admin \
-            --user=cert-manager-cas-issuer-sa@${{ github.event.inputs.project_id }}.iam.gserviceaccount.com || true
+#      - name: Grant cluster-admin to cert-manager-cas-issuer-sa
+#        run: |
+#          kubectl create clusterrolebinding cert-manager-cas-issuer-admin-binding \
+#            --clusterrole=cluster-admin \
+#            --user=cert-manager-cas-issuer-sa@${{ github.event.inputs.project_id }}.iam.gserviceaccount.com || true
       
       - name: Configure Helm Repo's
         run: |
@@ -115,11 +115,13 @@ jobs:
       - name: Install Google CAS Issuer
         run: |
           
+                    
           helm install google-cas-issuer ./cert-manager-google-cas-issuer \
             --namespace cert-manager \
             --create-namespace \
             --version v0.9.0 \
-            --set crds.enabled=true
+            --set crds.enabled=true \
+            
 
       - name: Install Istio
         run: |

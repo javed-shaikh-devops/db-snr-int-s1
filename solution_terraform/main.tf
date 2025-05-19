@@ -7,6 +7,15 @@ terraform {
   }
 }
 
+
+provider "kubernetes" {
+  host                   = "https://${google_container_cluster.primary.endpoint}"
+  cluster_ca_certificate = base64decode(google_container_cluster.primary.master_auth[0].cluster_ca_certificate)
+  token                  = data.google_client_config.default.access_token
+}
+
+data "google_client_config" "default" {}
+
 # Enable required APIs
 resource "google_project_service" "apis" {
   for_each = toset([
@@ -43,18 +52,17 @@ resource "google_service_account" "cert-manager-cas-issuer-sa" {
 }
 
 # Assign IAM roles to the custom service account
-resource "google_project_iam_member" "privateca_requester" {
+resource "google_project_iam_member" "privateca_roles" {
   for_each = toset([
-    "roles/privateca.admin",
     "roles/privateca.certificateRequester",
-    "roles/cloudkms.admin",
-    "roles/iam.serviceAccountUser",
-    "roles/viewer"
+    "roles/cloudkms.signerVerifier",
+    "roles/iam.serviceAccountUser"           # Required for Workload Identity
   ])
   project = var.project_id
   role    = each.value
   member  = "serviceAccount:${google_service_account.cert-manager-cas-issuer-sa.email}"
 }
+
 
 # Random suffix for names
 resource "random_id" "suffix" {
@@ -149,6 +157,22 @@ resource "google_project_iam_member" "privateca_admin_terraform_sa" {
   member  = "serviceAccount:terraform-sa@db-demo-int.iam.gserviceaccount.com"
 }
 
+# Template for consistent certificate issuance
+resource "google_privateca_certificate_template" "default" {
+  name     = "default-template"
+  location = var.region
+  predefined_values {
+    key_usage {
+      base_key_usage {
+        digital_signature  = true
+        key_encipherment  = true
+      }
+      extended_key_usage {
+        server_auth = true
+      }
+    }
+  }
+}
 
 # Self-signed Root CA
 resource "google_privateca_certificate_authority" "root_ca" {
@@ -192,6 +216,9 @@ resource "google_privateca_certificate_authority" "root_ca" {
   desired_state = "ENABLED"
 
   depends_on = [
+    google_kms_crypto_key_iam_binding.kms_signer_binding,
+    google_kms_crypto_key_iam_binding.kms_viewer_binding,
+    google_project_iam_member.privateca_roles,
     google_kms_crypto_key_iam_binding.kms_key_public_viewer_combined
   ]
   timeouts {
@@ -247,4 +274,15 @@ resource "google_service_account_iam_member" "cert_manager_workload_identity" {
   service_account_id = "projects/${var.project_id}/serviceAccounts/${google_service_account.cert-manager-cas-issuer-sa.email}"
   role               = "roles/iam.workloadIdentityUser"
   member             = "serviceAccount:${var.project_id}.svc.id.goog[cert-manager/cert-manager-cas-issuer-sa]"
+}
+
+# Kubernetes Service Account with annotation GSA -> KSA Mapping
+resource "kubernetes_service_account" "cert_manager_cas_issuer" {
+  metadata {
+    name      = "cert-manager-cas-issuer-sa"
+    namespace = "cert-manager"
+    annotations = {
+      "iam.gke.io/gcp-service-account" = google_service_account.cert-manager-cas-issuer-sa.email
+    }
+  }
 }

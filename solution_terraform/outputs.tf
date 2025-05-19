@@ -21,3 +21,11 @@ output "cert_manager_sa_email" {
 output "root_ca_name" {
   value = google_privateca_certificate_authority.root_ca.name
 }
+
+output "cas_issuer_sa_email" {
+  value = google_service_account.cert-manager-cas-issuer-sa.email
+}
+
+output "workload_identity_binding" {
+  value = google_service_account_iam_member.cert_manager_workload_identity.member
+}
