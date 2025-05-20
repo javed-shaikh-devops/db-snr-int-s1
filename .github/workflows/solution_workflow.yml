@@ -149,9 +149,7 @@ jobs:
       - name: Apply Rbac
         run: |
       
-          kubectl apply -f ./solution_helm/istio-cas-ingress/templates/cert-manager-cas-issuer-rbac.yaml
-          kubectl apply -f ./solution_helm/istio-cas-ingress/templates/cas-issuer.yaml
-          sleep 10
+           sleep 10
           kubectl rollout restart deployment -n cert-manager cert-manager-google-cas-issuer
 
       - name: Deploy Helm chart

@@ -29,7 +29,7 @@ imagePullSecrets: []
 commonLabels: {}
 serviceAccount:
   # Optional annotations to add to the service account
-  annotations: {}
+  annotations: {"iam.gke.io/gcp-service-account=cert-manager-cas-issuer-sa@db-demo-int.iam.gserviceaccount.com"}
 app:
   # Verbosity of google-cas-issuer logging.
   logLevel: 1 # 1-5
