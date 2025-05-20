@@ -7,7 +7,7 @@ on:
         required: true
       region:
         description: 'GCP Region'
-        default: 'us-central1'
+        default: 'europe-west1'
 
 
 env:
@@ -95,12 +95,7 @@ jobs:
         with:
           version: 'v3.12.0'
 
-#      - name: Grant cluster-admin to cert-manager-cas-issuer-sa
-#        run: |
-#          kubectl create clusterrolebinding cert-manager-cas-issuer-admin-binding \
-#            --clusterrole=cluster-admin \
-#            --user=cert-manager-cas-issuer-sa@${{ github.event.inputs.project_id }}.iam.gserviceaccount.com || true
-      
+     
       - name: Configure Helm Repo's
         run: |
           helm repo add istio https://istio-release.storage.googleapis.com/charts
@@ -149,17 +144,13 @@ jobs:
       - name: Apply Rbac
         run: |
       
-           sleep 10
+          sleep 10
           kubectl rollout restart deployment -n cert-manager cert-manager-google-cas-issuer
 
       - name: Deploy Helm chart
         run: |
           
           cd $GITHUB_WORKSPACE
-          
-          kubectl annotate serviceaccount cert-manager-cas-issuer-sa \
-            -n cert-manager \
-            iam.gke.io/gcp-service-account=cert-manager-cas-issuer-sa@db-demo-int.iam.gserviceaccount.com
           
           helm dependency build ./solution_helm/istio-cas-ingress
           
